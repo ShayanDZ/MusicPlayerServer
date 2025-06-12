@@ -41,7 +41,6 @@ public class UserRepository {
                     user.getPlaylists().addAll(playlists);
                     userList.add(user);
                 });
-        databaseConnection.close();
     }
     public static UserRepository getInstance() {
         if (instance == null) {
@@ -65,7 +64,6 @@ public class UserRepository {
                 .append("recentlyPlayed", user.getRecentlyPlayed())
                 .append("playlists", user.getPlaylists());
         databaseConnection.getDatabase().getCollection("users").insertOne(userDocument);
-        databaseConnection.close();
         return Response.signUpSuccess;
     }
     public List<User> getAllUser() {

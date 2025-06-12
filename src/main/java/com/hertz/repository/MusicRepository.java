@@ -34,7 +34,6 @@ public class MusicRepository {
                     Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id);
                     musicList.add(music);
                 });
-        databaseConnection.close();
 
     }
     public static MusicRepository getInstance() {
