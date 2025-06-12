@@ -100,7 +100,7 @@ public class ClientHandler extends Thread {
             response.addProperty("message", "Username already exists");
             return response;
         }
-        User user = new User(username, email, password, fullname, LocalDate.now(), 0);
+        User user = new User(username, email, fullname, password, LocalDate.now(), 0);
         Response responseMessage = UserRepository.getInstance().addUser(user);
         if (!Response.signUpSuccess.equals(responseMessage)) {
             JsonObject errorResponse = new JsonObject();
