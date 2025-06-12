@@ -8,7 +8,7 @@ public class PasswordUtils {
         return BCrypt.hashpw(password, BCrypt.gensalt());
     }
 
-    public static boolean verifyPassword(String rawPassword, String hashedPassword) {
+    public static boolean verifyPassword(String hashedPassword, String rawPassword) {
         try {
             return BCrypt.checkpw(rawPassword, hashedPassword);
         } catch (IllegalArgumentException e) {
