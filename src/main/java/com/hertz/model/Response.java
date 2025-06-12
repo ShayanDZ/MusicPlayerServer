@@ -4,7 +4,6 @@ public enum Response{
     signUpSuccess,
     emailAlreadyExist,
     usernameAlreadyExist,
-
     logInSuccess,
     userNotFound,
     incorrectPassword,

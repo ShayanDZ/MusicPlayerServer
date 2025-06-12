@@ -58,7 +58,7 @@ public class ClientHandler extends Thread {
                     break;
                 default:
                     responseJson = new JsonObject();
-                    responseJson.addProperty("status", Response.InvalidRequest.ordinal());
+                    responseJson.addProperty("status", Response.InvalidRequest.toString());
                     responseJson.addProperty("message", "Unknown request type");
                     break;
             }
@@ -90,12 +90,12 @@ public class ClientHandler extends Thread {
                 .anyMatch(user -> user.getUsername().equals(username));
 
         if (emailExist) {
-            response.addProperty("status", Response.emailAlreadyExist.ordinal());
+            response.addProperty("status", Response.emailAlreadyExist.toString());
             response.addProperty("message", "Email already exists");
             return response;
         }
         if (usernameExist) {
-            response.addProperty("status", Response.usernameAlreadyExist.ordinal());
+            response.addProperty("status", Response.usernameAlreadyExist.toString());
             response.addProperty("message", "Username already exists");
             return response;
         }
@@ -103,12 +103,12 @@ public class ClientHandler extends Thread {
         Response responseMessage = UserRepository.getInstance().addUser(user);
         if (!Response.signUpSuccess.equals(responseMessage)) {
             JsonObject errorResponse = new JsonObject();
-            errorResponse.addProperty("status", responseMessage.ordinal());
+            errorResponse.addProperty("status", responseMessage.toString());
             errorResponse.addProperty("message", responseMessage.toString());
             return errorResponse;
         }
         userRepository.getAllUser().add(user);
-        response.addProperty("status", Response.signUpSuccess.ordinal());
+        response.addProperty("status", Response.signUpSuccess.toString());
         response.addProperty("message", "User signed up successfully");
         return response;
     }
@@ -125,14 +125,14 @@ public class ClientHandler extends Thread {
 
         JsonObject response = new JsonObject();
         if (temp!=null) {
-            response.addProperty("status", Response.logInSuccess.ordinal());
+            response.addProperty("status", Response.logInSuccess.toString());
             response.addProperty("message", "User logged in successfully");
         } else if(test){
-            response.addProperty("status", Response.incorrectPassword.ordinal());
+            response.addProperty("status", Response.incorrectPassword.toString());
             response.addProperty("message", "Password is Incorrect");
         }
         else {
-            response.addProperty("status", Response.userNotFound.ordinal());
+            response.addProperty("status", Response.userNotFound.toString());
             response.addProperty("message", "Invalid username");
         }
         return response;
