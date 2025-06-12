@@ -12,7 +12,8 @@ public class PasswordUtils {
         try {
             return BCrypt.checkpw(rawPassword, hashedPassword);
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid password hash format", e);
+            System.err.println("Invalid password hash format: " + e.getMessage());
+            return false; // Return false if the hash is invalid
         }
     }
 }
