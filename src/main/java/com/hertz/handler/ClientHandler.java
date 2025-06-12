@@ -3,6 +3,8 @@ package com.hertz.handler;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.hertz.model.Music;
+import com.hertz.model.Response;
 import com.hertz.model.User;
 import com.hertz.repository.UserRepository;
 import com.hertz.utils.DatabaseConnection;
@@ -56,7 +58,7 @@ public class ClientHandler extends Thread {
                     break;
                 default:
                     responseJson = new JsonObject();
-                    responseJson.addProperty("status", "error");
+                    responseJson.addProperty("status", Response.InvalidRequest.ordinal());
                     responseJson.addProperty("message", "Unknown request type");
                     break;
             }
@@ -82,24 +84,31 @@ public class ClientHandler extends Thread {
         String password = payload.get("password").getAsString();
         UserRepository userRepository = UserRepository.getInstance();
 
-        boolean userExists = userRepository.getAllUser().stream()
-                .anyMatch(user -> user.getUsername().equals(username) || user.getEmail().equals(email));
+        boolean emailExist = userRepository.getAllUser().stream()
+                .anyMatch(user -> user.getEmail().equals(email));
+        boolean usernameExist = userRepository.getAllUser().stream()
+                .anyMatch(user -> user.getUsername().equals(username));
 
-        if (userExists) {
-            response.addProperty("status", "error");
-            response.addProperty("message", "Username or email already exists");
+        if (emailExist) {
+            response.addProperty("status", Response.emailAlreadyExist.ordinal());
+            response.addProperty("message", "Email already exists");
+            return response;
+        }
+        if (usernameExist) {
+            response.addProperty("status", Response.usernameAlreadyExist.ordinal());
+            response.addProperty("message", "Username already exists");
             return response;
         }
         User user = new User(username, email, password, fullname, LocalDate.now(), 0);
-        String responseMessage = UserRepository.getInstance().addUser(user);
-        if (!"User added successfully".equals(responseMessage)) {
+        Response responseMessage = UserRepository.getInstance().addUser(user);
+        if (!Response.signUpSuccess.equals(responseMessage)) {
             JsonObject errorResponse = new JsonObject();
-            errorResponse.addProperty("status", "error");
-            errorResponse.addProperty("message", responseMessage);
+            errorResponse.addProperty("status", responseMessage.ordinal());
+            errorResponse.addProperty("message", responseMessage.toString());
             return errorResponse;
         }
         userRepository.getAllUser().add(user);
-        response.addProperty("status", "success");
+        response.addProperty("status", Response.signUpSuccess.ordinal());
         response.addProperty("message", "User signed up successfully");
         return response;
     }
@@ -111,14 +120,20 @@ public class ClientHandler extends Thread {
         User temp = UserRepository.getInstance().getAllUser().stream().findAny()
                 .filter(user -> user.getUsername().equals(username) && user.getHashedPassword().equals(hashedPassword))
                 .orElse(null);
+        boolean test = UserRepository.getInstance().getAllUser().stream()
+                .anyMatch(user -> user.getUsername().equals(username) && !user.getHashedPassword().equals(hashedPassword));
 
         JsonObject response = new JsonObject();
         if (temp!=null) {
-            response.addProperty("status", "success");
+            response.addProperty("status", Response.logInSuccess.ordinal());
             response.addProperty("message", "User logged in successfully");
-        } else {
-            response.addProperty("status", "error");
-            response.addProperty("message", "Invalid username or password");
+        } else if(test){
+            response.addProperty("status", Response.incorrectPassword.ordinal());
+            response.addProperty("message", "Password is Incorrect");
+        }
+        else {
+            response.addProperty("status", Response.userNotFound.ordinal());
+            response.addProperty("message", "Invalid username");
         }
         return response;
     }

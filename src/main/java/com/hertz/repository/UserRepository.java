@@ -1,6 +1,7 @@
 package com.hertz.repository;
 
 
+import com.hertz.model.Response;
 import com.hertz.model.User;
 import com.hertz.utils.DatabaseConnection;
 import com.mongodb.Block;
@@ -48,9 +49,9 @@ public class UserRepository {
         }
         return instance;
     }
-    public String addUser(User user) {
+    public Response addUser(User user) {
         if (userList.contains(user)) {
-            return "User already exists";
+            return Response.USER_ALREADY_EXIST;
         }
         userList.add(user);
         DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
@@ -65,7 +66,7 @@ public class UserRepository {
                 .append("playlists", user.getPlaylists());
         databaseConnection.getDatabase().getCollection("users").insertOne(userDocument);
         databaseConnection.close();
-        return "User added successfully";
+        return Response.signUpSuccess;
     }
     public List<User> getAllUser() {
         return userList;
