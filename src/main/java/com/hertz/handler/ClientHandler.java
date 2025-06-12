@@ -80,8 +80,17 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         String email = payload.get("email").getAsString();
         String password = payload.get("password").getAsString();
-        User user = new User(username, email, password, fullname, LocalDate.now(), 0);
         UserRepository userRepository = UserRepository.getInstance();
+
+        boolean userExists = userRepository.getAllUser().stream()
+                .anyMatch(user -> user.getUsername().equals(username) || user.getEmail().equals(email));
+
+        if (userExists) {
+            response.addProperty("status", "error");
+            response.addProperty("message", "Username or email already exists");
+            return response;
+        }
+        User user = new User(username, email, password, fullname, LocalDate.now(), 0);
         String responseMessage = UserRepository.getInstance().addUser(user);
         if (!"User added successfully".equals(responseMessage)) {
             JsonObject errorResponse = new JsonObject();
