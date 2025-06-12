@@ -10,7 +10,7 @@ public class DatabaseConnection {
     private MongoClient mongoClient;
     private MongoClientURI mongoClientURI;
     public static String uri = "mongodb://localhost:27017";
-    public static String dataBaseName = "ShayanDZ";
+    public static String dataBaseName = "MusicApp";
 
     private DatabaseConnection() {
         mongoClientURI = new MongoClientURI(uri);
