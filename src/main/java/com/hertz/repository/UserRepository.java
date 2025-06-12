@@ -57,7 +57,7 @@ public class UserRepository {
         Document userDocument = new Document("username", user.getUsername())
                 .append("email", user.getEmail())
                 .append("fullName", user.getFullName())
-                .append("hashedPassword", user.getPassword())
+                .append("hashedPassword", user.getHashedPassword())
                 .append("registrationDate", java.util.Date.from(user.getRegistrationDate().atStartOfDay(ZoneId.systemDefault()).toInstant()))
                 .append("id", user.getId())
                 .append("likedSongs", user.getLikedSongs())
