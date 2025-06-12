@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDate;
+import static com.hertz.utils.PasswordUtils.verifyPassword;
 
 public class ClientHandler extends Thread {
     private static final Gson gson = new Gson();
@@ -116,12 +117,11 @@ public class ClientHandler extends Thread {
     private JsonObject handleLogIn(JsonObject payload) {
         String username = payload.get("username").getAsString();
         String password = payload.get("password").getAsString();
-        String hashedPassword = passwordHasher(password);
         User temp = UserRepository.getInstance().getAllUser().stream().findAny()
-                .filter(user -> user.getUsername().equals(username) && user.getHashedPassword().equals(hashedPassword))
+                .filter(user -> user.getUsername().equals(username) && verifyPassword(user.getHashedPassword(),password))
                 .orElse(null);
         boolean test = UserRepository.getInstance().getAllUser().stream()
-                .anyMatch(user -> user.getUsername().equals(username) && !user.getHashedPassword().equals(hashedPassword));
+                .anyMatch(user -> user.getUsername().equals(username) && !verifyPassword(user.getHashedPassword(),password));
 
         JsonObject response = new JsonObject();
         if (temp!=null) {
@@ -138,8 +138,5 @@ public class ClientHandler extends Thread {
         return response;
     }
 
-    private String passwordHasher(String password) {
-        //TODO
-        return password;
-    }
+
 }

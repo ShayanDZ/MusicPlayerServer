@@ -23,7 +23,11 @@
             <artifactId>mongo-java-driver</artifactId>
             <version>3.12.10</version> <!-- Check for the latest version -->
         </dependency>
-
+        <dependency>
+            <groupId>de.svenkubiak</groupId>
+            <artifactId>jBCrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>

@@ -1,9 +1,13 @@
 package com.hertz.model;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static com.hertz.utils.PasswordUtils.hashPassword;
 
 public class User {
 
@@ -15,7 +19,6 @@ public class User {
 
     // Mutable properties
     private String hashedPassword;
-    private transient String password;
     private String fullName;
     private String profileImageUrl;
     private final List<Music> likedSongs = new ArrayList<>();
@@ -25,19 +28,13 @@ public class User {
     public User(String username, String email, String fullName, String password, LocalDate registrationDate,Integer id) {
         this.username = username;
         this.email = email;
-        this.hashedPassword = password;
+        this.hashedPassword = hashPassword(password);
         this.fullName = fullName;
         this.registrationDate = registrationDate;
         this.id = (id==null || id==0)?(generateId(username, email)):id;
     }
 
-    public String getPassword() {
-        return password;
-    }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
 
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
@@ -98,7 +95,6 @@ public class User {
         User user = (User) o;
         return Objects.equals(id, user.id);
     }
-
     @Override
     public int hashCode() {
         return Objects.hash(id);
