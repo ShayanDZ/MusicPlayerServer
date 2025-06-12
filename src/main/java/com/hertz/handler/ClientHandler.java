@@ -3,12 +3,16 @@ package com.hertz.handler;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.hertz.model.User;
+import com.hertz.repository.UserRepository;
+import com.hertz.utils.DatabaseConnection;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDate;
 
 public class ClientHandler extends Thread {
     private static final Gson gson = new Gson();
@@ -71,14 +75,21 @@ public class ClientHandler extends Thread {
     }
 
     private JsonObject handleSignUp(JsonObject payload) {
+        JsonObject response = new JsonObject();
         String fullname = payload.get("fullname").getAsString();
         String username = payload.get("username").getAsString();
         String email = payload.get("email").getAsString();
         String password = payload.get("password").getAsString();
-        // Here you would typically add logic to save the user to a database
-        // For demonstration, we'll just return a success message
-
-        JsonObject response = new JsonObject();
+        User user = new User(username, email, password, fullname, LocalDate.now(), 0);
+        UserRepository userRepository = UserRepository.getInstance();
+        String responseMessage = UserRepository.getInstance().addUser(user);
+        if (!"User added successfully".equals(responseMessage)) {
+            JsonObject errorResponse = new JsonObject();
+            errorResponse.addProperty("status", "error");
+            errorResponse.addProperty("message", responseMessage);
+            return errorResponse;
+        }
+        userRepository.getAllUser().add(user);
         response.addProperty("status", "success");
         response.addProperty("message", "User signed up successfully");
         return response;
@@ -87,12 +98,13 @@ public class ClientHandler extends Thread {
     private JsonObject handleLogIn(JsonObject payload) {
         String username = payload.get("username").getAsString();
         String password = payload.get("password").getAsString();
-
-        // Here you would typically add logic to validate the user credentials
-        // For demonstration, we'll assume successful login if username is "test"
+        String hashedPassword = passwordHasher(password);
+        User temp = UserRepository.getInstance().getAllUser().stream().findAny()
+                .filter(user -> user.getUsername().equals(username) && user.getHashedPassword().equals(hashedPassword))
+                .orElse(null);
 
         JsonObject response = new JsonObject();
-        if ("test".equals(username) && "password".equals(password)) {
+        if (temp!=null) {
             response.addProperty("status", "success");
             response.addProperty("message", "User logged in successfully");
         } else {
@@ -100,5 +112,10 @@ public class ClientHandler extends Thread {
             response.addProperty("message", "Invalid username or password");
         }
         return response;
+    }
+
+    private String passwordHasher(String password) {
+        //TODO
+        return password;
     }
 }

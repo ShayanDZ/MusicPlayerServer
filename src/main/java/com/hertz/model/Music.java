@@ -6,7 +6,7 @@ import java.util.Objects;
 public class Music {
 
     // Immutable properties
-    private final String id;
+    private final int id;
     private final String title;
     private final Artist artist;
     private final Genre genre;
@@ -17,9 +17,9 @@ public class Music {
 
     // Mutable properties
     private int likeCount;
-    private boolean isLiked;
+    private boolean isLiked = false;
 
-    public Music(String title, Artist artist, Genre genre, int durationInSeconds, LocalDate releaseDate, Album album) {
+    public Music(String title, Artist artist, Genre genre, int durationInSeconds, LocalDate releaseDate, Album album, Integer id) {
         this.title = title;
         this.artist = artist;
         this.genre = genre;
@@ -27,13 +27,12 @@ public class Music {
         this.releaseDate = releaseDate;
         this.addedDate = LocalDate.now();
         this.album = album;
-        this.id = generateId(title, artist, releaseDate);
-        this.isLiked = false;
+        this.id = ((id==null || id==0)?(generateId(title, artist, releaseDate)):id);
     }
 
-    private String generateId(String title, Artist artist, LocalDate releaseDate) {
+    private int generateId(String title, Artist artist, LocalDate releaseDate) {
         // TODO: implement a complex ID generation logic
-        return "";
+        return 0;
     }
 
 
@@ -55,7 +54,7 @@ public class Music {
         return String.format("Track: %s by %s", title, artist.toString());
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 

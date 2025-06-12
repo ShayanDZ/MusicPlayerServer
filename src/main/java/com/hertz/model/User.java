@@ -8,38 +8,84 @@ import java.util.Objects;
 public class User {
 
     // Immutable properties
-    private final String id;
+    private final int id;
     private final String username;
     private final String email;
     private final LocalDate registrationDate;
 
     // Mutable properties
-    private String password;
+    private String hashedPassword;
+    private transient String password;
     private String fullName;
     private String profileImageUrl;
-    private final List<Music> likedSongs;
-    private final List<Music> recentlyPlayed;
-    private final List<Playlist> playlists;
+    private final List<Music> likedSongs = new ArrayList<>();
+    private final List<Music> recentlyPlayed = new ArrayList<>();
+    private final List<Playlist> playlists = new ArrayList<>();
 
-    public User(String username, String email, String fullName, String password, LocalDate registrationDate) {
+    public User(String username, String email, String fullName, String password, LocalDate registrationDate,Integer id) {
         this.username = username;
         this.email = email;
-        this.password = password;
+        this.hashedPassword = password;
         this.fullName = fullName;
         this.registrationDate = registrationDate;
-        this.id = generateId(username, email);
-        this.likedSongs = new ArrayList<>();
-        this.recentlyPlayed = new ArrayList<>();
-        this.playlists = new ArrayList<>();
+        this.id = (id==null || id==0)?(generateId(username, email)):id;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }
 
-    private String generateId(String username, String email) {
+    private int generateId(String username, String email) {
         // TODO: implement a ID logic
-        return "";
+        return 0;
+    }
+
+    public List<Music> getLikedSongs() {
+        return likedSongs;
+    }
+
+    public List<Music> getRecentlyPlayed() {
+        return recentlyPlayed;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public LocalDate getRegistrationDate() {
+        return registrationDate;
+    }
+
+    public String getHashedPassword() {
+        return hashedPassword;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public List<Playlist> getPlaylists() {
+        return playlists;
     }
 
     @Override
