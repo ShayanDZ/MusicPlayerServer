@@ -44,8 +44,7 @@ public class User {
     }
 
     private int generateId(String username, String email) {
-        // TODO: implement a ID logic
-        return 0;
+        return (username + email).hashCode();
     }
 
     public List<Music> getLikedSongs() {

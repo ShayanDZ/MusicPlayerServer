@@ -31,8 +31,7 @@ public class Music {
     }
 
     private int generateId(String title, Artist artist, LocalDate releaseDate) {
-        // TODO: implement a complex ID generation logic
-        return 0;
+        return (title + artist.getName() + releaseDate.toString()).hashCode();
     }
 
 

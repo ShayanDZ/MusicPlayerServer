@@ -18,6 +18,34 @@ public class Artist {
     private final List<Music> songs;
     private final List<Album> albums;
 
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public List<Genre> getGenres() {
+        return genres;
+    }
+
+    public List<Music> getSongs() {
+        return songs;
+    }
+
+    public List<Album> getAlbums() {
+        return albums;
+    }
+
     public Artist(String name, String bio, String profileImageUrl, List<Genre> genres) {
         this.name = name;
         this.bio = bio;
