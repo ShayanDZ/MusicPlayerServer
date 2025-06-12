@@ -9,6 +9,10 @@ public class PasswordUtils {
     }
 
     public static boolean verifyPassword(String rawPassword, String hashedPassword) {
-        return BCrypt.checkpw(rawPassword, hashedPassword);
+        try {
+            return BCrypt.checkpw(rawPassword, hashedPassword);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid password hash format", e);
+        }
     }
 }
