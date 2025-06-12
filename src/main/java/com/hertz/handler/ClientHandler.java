@@ -119,20 +119,18 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         String password = payload.get("password").getAsString();
         User temp = UserRepository.getInstance().getAllUser().stream().findAny()
-                .filter(user -> user.getUsername().equals(username) && verifyPassword(user.getHashedPassword(),password))
+                .filter(user -> user.getUsername().equals(username))
                 .orElse(null);
-        boolean test = UserRepository.getInstance().getAllUser().stream()
-                .anyMatch(user -> user.getUsername().equals(username) && !verifyPassword(user.getHashedPassword(),password));
-
         JsonObject response = new JsonObject();
-        if (temp!=null) {
-            response.addProperty("status", Response.logInSuccess.toString());
-            response.addProperty("message", "User logged in successfully");
-        } else if(test){
-            response.addProperty("status", Response.incorrectPassword.toString());
-            response.addProperty("message", "Password is Incorrect");
-        }
-        else {
+        if (temp != null) {
+            if (verifyPassword(temp.getHashedPassword(), password)) {
+                response.addProperty("status", Response.logInSuccess.toString());
+                response.addProperty("message", "User logged in successfully");
+            } else {
+                response.addProperty("status", Response.incorrectPassword.toString());
+                response.addProperty("message", "Password is Incorrect");
+            }
+        } else {
             response.addProperty("status", Response.userNotFound.toString());
             response.addProperty("message", "Invalid username");
         }
