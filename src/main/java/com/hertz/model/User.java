@@ -102,6 +102,12 @@ public class User {
 
     @Override
     public String toString() {
-        return String.format("User: %s", username);
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", registrationDate=" + registrationDate +
+                ", fullName='" + fullName + '\'' +
+                ", profileImageUrl='" + profileImageUrl;
     }
 }

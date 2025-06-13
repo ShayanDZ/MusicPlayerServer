@@ -140,6 +140,11 @@ public class ClientHandler extends Thread {
             if (verifyPassword(temp.getHashedPassword(), password)) {
                 response.addProperty("status", Response.logInSuccess.toString());
                 response.addProperty("message", "User logged in successfully");
+                response.addProperty("username", temp.getUsername());
+                response.addProperty("email", temp.getEmail());
+                response.addProperty("fullname", temp.getFullName());
+                response.addProperty("registrationDate", temp.getRegistrationDate().toString());
+                response.addProperty("profileImageUrl", temp.getProfileImageUrl() != null ? temp.getProfileImageUrl() : "");
             } else {
                 response.addProperty("status", Response.incorrectPassword.toString());
                 response.addProperty("message", "Password is Incorrect");
