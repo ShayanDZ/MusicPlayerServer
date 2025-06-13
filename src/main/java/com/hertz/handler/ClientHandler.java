@@ -30,14 +30,13 @@ public class ClientHandler extends Thread {
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
-
             StringBuilder requestBuilder = new StringBuilder();
             String inputLine;
 
             // Read the request from the client
             while ((inputLine = in.readLine()) != null) {
                 requestBuilder.append(inputLine);
-                if (inputLine.isEmpty()) { // End of request
+                if (inputLine.isEmpty()) {
                     break;
                 }
             }
@@ -118,9 +117,21 @@ public class ClientHandler extends Thread {
     private JsonObject handleLogIn(JsonObject payload) {
         String username = payload.get("username").getAsString();
         String password = payload.get("password").getAsString();
-        User temp = UserRepository.getInstance().getAllUser().stream().findAny()
+
+        System.out.println("Username received: " + username);
+        System.out.println("Password received: " + password);
+
+        User temp = UserRepository.getInstance().getAllUser().stream()
                 .filter(user -> user.getUsername().equals(username))
+                .findAny()
                 .orElse(null);
+
+        if (temp != null) {
+            System.out.println("User found: " + temp.getUsername());
+        } else {
+            System.out.println("User not found in repository.");
+        }
+
         JsonObject response = new JsonObject();
         if (temp != null) {
             if (verifyPassword(temp.getHashedPassword(), password)) {
