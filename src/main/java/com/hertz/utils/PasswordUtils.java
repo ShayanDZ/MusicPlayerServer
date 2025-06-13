@@ -4,15 +4,15 @@ import org.mindrot.jbcrypt.BCrypt;
 
 public class PasswordUtils {
 
-    public static String hashPassword(String password) {
+    public static String hashPassword(String password) throws IllegalArgumentException {
+        if (password == null || password.isEmpty()) throw new IllegalArgumentException();
         return BCrypt.hashpw(password, BCrypt.gensalt());
     }
 
     public static boolean verifyPassword(String hashedPassword, String rawPassword) {
+        if (hashedPassword == null || hashedPassword.isEmpty() || rawPassword == null || rawPassword.isEmpty())
+            return false;
         try {
-            System.out.println("Verifying password:");
-            System.out.println("Raw password: " + rawPassword);
-            System.out.println("Hashed password: " + hashedPassword);
             boolean result = BCrypt.checkpw(rawPassword, hashedPassword);
             System.out.println("Password verification result: " + result);
             return result;
