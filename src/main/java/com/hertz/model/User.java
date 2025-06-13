@@ -25,10 +25,10 @@ public class User {
     private final List<Music> recentlyPlayed = new ArrayList<>();
     private final List<Playlist> playlists = new ArrayList<>();
 
-    public User(String username, String email, String fullName, String password, LocalDate registrationDate,Integer id) {
+    public User(String username, String email, String fullName, String hashedPassword, LocalDate registrationDate,Integer id) {
         this.username = username;
         this.email = email;
-        this.hashedPassword = hashPassword(password);
+        this.hashedPassword = hashedPassword;
         this.fullName = fullName;
         this.registrationDate = registrationDate;
         this.id = (id==null || id==0)?(generateId(username, email)):id;

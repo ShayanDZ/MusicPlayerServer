@@ -8,6 +8,7 @@ import com.hertz.model.Response;
 import com.hertz.model.User;
 import com.hertz.repository.UserRepository;
 import com.hertz.utils.DatabaseConnection;
+import com.hertz.utils.PasswordUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -100,7 +101,9 @@ public class ClientHandler extends Thread {
             response.addProperty("message", "Username already exists");
             return response;
         }
-        User user = new User(username, email, fullname, password, LocalDate.now(), 0);
+
+        String hashedPassword = PasswordUtils.hashPassword(password);
+        User user = new User(username, email, fullname, hashedPassword, LocalDate.now(), 0);
         Response responseMessage = UserRepository.getInstance().addUser(user);
         if (!Response.signUpSuccess.equals(responseMessage)) {
             JsonObject errorResponse = new JsonObject();
