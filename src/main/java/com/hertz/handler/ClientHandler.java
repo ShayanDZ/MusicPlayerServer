@@ -68,6 +68,9 @@ public class ClientHandler extends Thread {
                 case "getUserMusicList":
                     responseJson = handleGetUserMusicList(requestJson.getAsJsonObject("Payload"));
                     break;
+                case "deleteMusic":
+                    responseJson = handleDeleteMusic(requestJson.getAsJsonObject("payload"));
+                    break;
                 default:
                     responseJson = new JsonObject();
                     responseJson.addProperty("status", Response.InvalidRequest.toString());
@@ -281,4 +284,52 @@ public class ClientHandler extends Thread {
         return response;
     }
 
+    private JsonObject handleDeleteMusic(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        int userId = payload.get("userId").getAsInt();
+        int musicId = payload.get("musicId").getAsInt();
+
+        UserRepository userRepository = UserRepository.getInstance();
+        MusicRepository musicRepository = MusicRepository.getInstance();
+
+        User user = userRepository.getAllUser().stream()
+                .filter(u -> u.getId() == userId)
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        Music music = musicRepository.getAllMusic().stream()
+                .filter(m -> m.getId() == musicId)
+                .findFirst()
+                .orElse(null);
+
+        if (music == null) {
+            response.addProperty("status", Response.musicNotFound.toString());
+            response.addProperty("message", "Music not found");
+            return response;
+        }
+
+        try {
+            // Remove music from user's tracks
+            boolean removed = user.getTracks().removeIf(m -> m.getId() == musicId);
+
+            if (removed) {
+                response.addProperty("status", Response.deleteMusicSuccess.toString());
+                response.addProperty("message", "Music removed from user's tracks successfully");
+            } else {
+                response.addProperty("status", Response.musicNotFoundForUser.toString());
+                response.addProperty("message", "Music not found in user's tracks");
+            }
+        } catch (Exception e) {
+            response.addProperty("status", Response.deleteMusicFailed.toString());
+            response.addProperty("message", "Failed to remove music: " + e.getMessage());
+        }
+
+        return response;
+    }
 }
