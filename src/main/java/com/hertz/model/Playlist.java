@@ -11,11 +11,44 @@ public class Playlist {
     private final int id;
     private final User owner;
     private final LocalDate createdDate;
+    private final List<Music> tracks;
 
     // Mutable properties
     private String name;
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     private String description;
-    private final List<Music> tracks;
+
+    public int getId() {
+        return id;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public LocalDate getCreatedDate() {
+        return createdDate;
+    }
+
+    public List<Music> getTracks() {
+        return tracks;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 
     public Playlist(String name, User owner, String description) {
         this.name = name;

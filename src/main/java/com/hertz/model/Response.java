@@ -31,5 +31,7 @@ public enum Response{
     dislikeSuccess,
     dislikeFailed,
     NotLiked,
+    getUserPlaylistsSuccess,
+    getUserPlaylistsFailed,
 }
 

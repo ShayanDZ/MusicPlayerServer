@@ -80,6 +80,9 @@ public class ClientHandler extends Thread {
                 case "dislikeSong":
                     responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
                     break;
+                case "getUserPlaylists":
+                    responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
+                    break;
                 default:
                     responseJson = new JsonObject();
                     responseJson.addProperty("status", Response.InvalidRequest.toString());
@@ -502,6 +505,47 @@ public class ClientHandler extends Thread {
         } catch (Exception e) {
             response.addProperty("status", Response.dislikeFailed.toString());
             response.addProperty("message", "Failed to dislike song: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    private JsonObject handleGetUserPlaylists(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        int userId = payload.get("userId").getAsInt();
+
+        UserRepository userRepository = UserRepository.getInstance();
+
+        User user = userRepository.getAllUser().stream()
+                .filter(u -> u.getId() == userId)
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        try {
+            List<Playlist> userPlaylists = user.getPlaylists();
+            List<JsonObject> playlistJsonList = new ArrayList<>();
+
+            for (Playlist playlist : userPlaylists) {
+                JsonObject playlistJson = new JsonObject();
+                playlistJson.addProperty("id", playlist.getId());
+                playlistJson.addProperty("name", playlist.getName());
+                playlistJson.addProperty("description", playlist.getDescription());
+                playlistJson.addProperty("createdDate", playlist.getCreatedDate().toString());
+                playlistJson.addProperty("owner", playlist.getOwner().getUsername());
+                playlistJsonList.add(playlistJson);
+            }
+
+            response.addProperty("status", Response.getUserPlaylistsSuccess.toString());
+            response.add("Payload", gson.toJsonTree(playlistJsonList));
+        } catch (Exception e) {
+            response.addProperty("status", Response.getUserPlaylistsFailed.toString());
+            response.addProperty("message", "Failed to retrieve playlists: " + e.getMessage());
         }
 
         return response;
