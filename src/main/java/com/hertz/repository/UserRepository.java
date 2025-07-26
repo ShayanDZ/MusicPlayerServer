@@ -37,10 +37,18 @@ public class UserRepository {
                     ArrayList recentlyPlayed = (ArrayList) userDocument.get("recentlyPlayed");
                     ArrayList playlists = (ArrayList) userDocument.get("playlists");
                     User user = new User(username, email, fullName, hashedPassword, registrationDate,id);
-                    user.getTracks().addAll(tracks);
-                    user.getLikedSongs().addAll(likedSongs);
-                    user.getRecentlyPlayed().addAll(recentlyPlayed);
-                    user.getPlaylists().addAll(playlists);
+                    if (tracks != null) {
+                        user.getTracks().addAll(tracks);
+                    }
+                    if (likedSongs != null) {
+                        user.getLikedSongs().addAll(likedSongs);
+                    }
+                    if (recentlyPlayed != null) {
+                        user.getRecentlyPlayed().addAll(recentlyPlayed);
+                    }
+                    if (playlists != null) {
+                        user.getPlaylists().addAll(playlists);
+                    }
                     userList.add(user);
                 });
     }
