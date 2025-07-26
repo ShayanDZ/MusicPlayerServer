@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.hertz.model.*;
+import com.hertz.repository.MusicRepository;
 import com.hertz.repository.UserRepository;
 import com.hertz.utils.DatabaseConnection;
 import com.hertz.utils.PasswordUtils;
@@ -63,6 +64,9 @@ public class ClientHandler extends Thread {
                     break;
                 case "uploadMusic":
                     responseJson = handleUploadMusic(requestJson.getAsJsonObject("Payload"));
+                    break;
+                case "getUserMusicList":
+                    responseJson = handleGetUserMusicList(requestJson.getAsJsonObject("Payload"));
                     break;
                 default:
                     responseJson = new JsonObject();
@@ -230,6 +234,48 @@ public class ClientHandler extends Thread {
         } catch (Exception e) {
             response.addProperty("status", Response.uploadMusicFailed.toString());
             response.addProperty("message", "Failed to upload music: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    private JsonObject handleGetUserMusicList(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        int userId = payload.get("userId").getAsInt();
+
+        UserRepository userRepository = UserRepository.getInstance();
+        User user = userRepository.getAllUser().stream()
+                .filter(u -> u.getId() == userId)
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        try {
+            List<Music> userMusicList = user.getTracks();
+            List<JsonObject> musicJsonList = new ArrayList<>();
+
+            for (Music music : userMusicList) {
+                JsonObject musicJson = new JsonObject();
+                musicJson.addProperty("id", music.getId());
+                musicJson.addProperty("title", music.getTitle());
+                musicJson.addProperty("artist", music.getArtist().getName());
+                musicJson.addProperty("genre", music.getGenre());
+                musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
+                musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
+                musicJson.addProperty("extension", music.getExtension());
+                musicJsonList.add(musicJson);
+            }
+
+            response.addProperty("status", Response.getUserMusicListSuccess.toString());
+            response.add("Payload", gson.toJsonTree(musicJsonList));
+        } catch (Exception e) {
+            response.addProperty("status", Response.getUserMusicListFailed.toString());
+            response.addProperty("message", "Failed to retrieve music list: " + e.getMessage());
         }
 
         return response;

@@ -48,6 +48,42 @@ public class Music {
     }
 
 
+    public Artist getArtist() {
+        return artist;
+    }
+
+    public String getGenre() {
+        return genre;
+    }
+
+    public int getDurationInSeconds() {
+        return durationInSeconds;
+    }
+
+    public LocalDate getReleaseDate() {
+        return releaseDate;
+    }
+
+    public LocalDate getAddedDate() {
+        return addedDate;
+    }
+
+    public Album getAlbum() {
+        return album;
+    }
+
+    public String getExtension() {
+        return extension;
+    }
+
+    public int getLikeCount() {
+        return likeCount;
+    }
+
+    public boolean isLiked() {
+        return isLiked;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -16,5 +16,11 @@ public enum Response{
     USER_ALREADY_EXIST,
     uploadMusicSuccess,
     uploadMusicFailed,
+    getUserMusicListSuccess,
+    getUserMusicListFailed,
+    musicNotFound,
+    deleteMusicSuccess,
+    deleteMusicFailed,
+    musicNotFoundForUser,
 }
 
