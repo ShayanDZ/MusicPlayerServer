@@ -28,5 +28,8 @@ public enum Response{
     alreadyLiked,
     likeSuccess,
     likeFailed,
+    dislikeSuccess,
+    dislikeFailed,
+    NotLiked,
 }
 

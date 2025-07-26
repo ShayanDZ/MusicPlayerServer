@@ -77,6 +77,9 @@ public class ClientHandler extends Thread {
                 case "likeSong":
                     responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
                     break;
+                case "dislikeSong":
+                    responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
+                    break;
                 default:
                     responseJson = new JsonObject();
                     responseJson.addProperty("status", Response.InvalidRequest.toString());
@@ -430,14 +433,9 @@ public class ClientHandler extends Thread {
                         .updateOne(new Document("id", musicId),
                                 new Document("$set", new Document("likeCount", music.getLikeCount())));
 
-                // Update the user's likedSongs in the database
-                List<Integer> likedSongIds = new ArrayList<>();
-                for (Music likedMusic : user.getLikedSongs()) {
-                    likedSongIds.add(likedMusic.getId());
-                }
                 databaseConnection.getDatabase().getCollection("users")
                         .updateOne(new Document("id", userId),
-                                new Document("$set", new Document("likedSongs", likedSongIds)));
+                                new Document("$set", new Document("likedSongs", user.getLikedSongs())));
 
                 response.addProperty("status", Response.likeSuccess.toString());
                 response.addProperty("message", "Song liked successfully");
@@ -445,6 +443,65 @@ public class ClientHandler extends Thread {
         } catch (Exception e) {
             response.addProperty("status", Response.likeFailed.toString());
             response.addProperty("message", "Failed to like song: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    private JsonObject handleDislikeSong(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        int userId = payload.get("userId").getAsInt();
+        int musicId = payload.get("musicId").getAsInt();
+
+        UserRepository userRepository = UserRepository.getInstance();
+        MusicRepository musicRepository = MusicRepository.getInstance();
+
+        User user = userRepository.getAllUser().stream()
+                .filter(u -> u.getId() == userId)
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        Music music = musicRepository.getAllMusic().stream()
+                .filter(m -> m.getId() == musicId)
+                .findFirst()
+                .orElse(null);
+
+        if (music == null) {
+            response.addProperty("status", Response.musicNotFound.toString());
+            response.addProperty("message", "Music not found");
+            return response;
+        }
+
+        try {
+            if (!user.getLikedSongs().contains(music)) {
+                response.addProperty("status", Response.NotLiked.toString());
+                response.addProperty("message", "Song is not liked by the user");
+            } else {
+                user.getLikedSongs().remove(music);
+                music.setLikeCount(music.getLikeCount() - 1);
+
+                // Update the music's likeCount in the database
+                DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+                databaseConnection.getDatabase().getCollection("musics")
+                        .updateOne(new Document("id", musicId),
+                                new Document("$set", new Document("likeCount", music.getLikeCount())));
+
+                databaseConnection.getDatabase().getCollection("users")
+                        .updateOne(new Document("id", userId),
+                                new Document("$set", new Document("likedSongs", user.getLikedSongs())));
+
+                response.addProperty("status", Response.dislikeSuccess.toString());
+                response.addProperty("message", "Song disliked successfully");
+            }
+        } catch (Exception e) {
+            response.addProperty("status", Response.dislikeFailed.toString());
+            response.addProperty("message", "Failed to dislike song: " + e.getMessage());
         }
 
         return response;
