@@ -64,6 +64,10 @@ public class Music {
         return releaseDate;
     }
 
+    public void setLikeCount(int likeCount) {
+        this.likeCount = likeCount;
+    }
+
     public LocalDate getAddedDate() {
         return addedDate;
     }

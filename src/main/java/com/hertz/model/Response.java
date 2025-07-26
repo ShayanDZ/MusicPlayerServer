@@ -25,5 +25,8 @@ public enum Response{
     downloadMusicSuccess,
     downloadMusicFailed,
     dataNotFound,
+    alreadyLiked,
+    likeSuccess,
+    likeFailed,
 }
 
