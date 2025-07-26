@@ -3,12 +3,11 @@ package com.hertz.handler;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import com.hertz.model.Music;
-import com.hertz.model.Response;
-import com.hertz.model.User;
+import com.hertz.model.*;
 import com.hertz.repository.UserRepository;
 import com.hertz.utils.DatabaseConnection;
 import com.hertz.utils.PasswordUtils;
+import org.bson.Document;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,6 +15,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.hertz.utils.PasswordUtils.verifyPassword;
 
@@ -32,7 +35,7 @@ public class ClientHandler extends Thread {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
             StringBuilder requestBuilder = new StringBuilder();
-            String inputLine;
+            java.lang.String inputLine;
 
             // Read the request from the client
             while ((inputLine = in.readLine()) != null) {
@@ -42,12 +45,12 @@ public class ClientHandler extends Thread {
                 }
             }
 
-            String requestString = requestBuilder.toString();
+            java.lang.String requestString = requestBuilder.toString();
             System.out.println("Request received: " + requestString);
 
             // Parse the JSON request using GSON
             JsonObject requestJson = gson.fromJson(requestString, JsonObject.class);
-            String action = requestJson.get("Request").getAsString();
+            java.lang.String action = requestJson.get("Request").getAsString();
 
             JsonObject responseJson;
 
@@ -57,6 +60,9 @@ public class ClientHandler extends Thread {
                     break;
                 case "logIn":
                     responseJson = handleLogIn(requestJson.getAsJsonObject("Payload"));
+                    break;
+                case "uploadMusic":
+                    responseJson = handleUploadMusic(requestJson.getAsJsonObject("Payload"));
                     break;
                 default:
                     responseJson = new JsonObject();
@@ -80,10 +86,10 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleSignUp(JsonObject payload) {
         JsonObject response = new JsonObject();
-        String fullname = payload.get("fullname").getAsString();
-        String username = payload.get("username").getAsString();
-        String email = payload.get("email").getAsString();
-        String password = payload.get("password").getAsString();
+        java.lang.String fullname = payload.get("fullname").getAsString();
+        java.lang.String username = payload.get("username").getAsString();
+        java.lang.String email = payload.get("email").getAsString();
+        java.lang.String password = payload.get("password").getAsString();
         UserRepository userRepository = UserRepository.getInstance();
 
         boolean emailExist = userRepository.getAllUser().stream()
@@ -102,7 +108,7 @@ public class ClientHandler extends Thread {
             return response;
         }
 
-        String hashedPassword = PasswordUtils.hashPassword(password);
+        java.lang.String hashedPassword = PasswordUtils.hashPassword(password);
         User user = new User(username, email, fullname, hashedPassword, LocalDate.now(), 0);
         Response responseMessage = UserRepository.getInstance().addUser(user);
         if (!Response.signUpSuccess.equals(responseMessage)) {
@@ -118,8 +124,8 @@ public class ClientHandler extends Thread {
     }
 
     private JsonObject handleLogIn(JsonObject payload) {
-        String username = payload.get("username").getAsString();
-        String password = payload.get("password").getAsString();
+        java.lang.String username = payload.get("username").getAsString();
+        java.lang.String password = payload.get("password").getAsString();
 
         System.out.println("Username received: " + username);
         System.out.println("Password received: " + password);
@@ -156,5 +162,77 @@ public class ClientHandler extends Thread {
         return response;
     }
 
+    private JsonObject handleUploadMusic(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        int userId = payload.get("userId").getAsInt();
+        JsonObject musicMap = payload.getAsJsonObject("musicMap");
+        String base64Data = payload.get("base64Data").getAsString();
+
+        UserRepository userRepository = UserRepository.getInstance();
+        User user = userRepository.getAllUser().stream()
+                .filter(u -> u.getId() == userId)
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        try {
+            // Parse artist from musicMap
+            JsonObject artistMap = musicMap.getAsJsonObject("artist");
+            String artistName = artistMap.get("name").getAsString();
+            String artistBio = artistMap.has("bio") ? artistMap.get("bio").getAsString() : "Default bio";
+            String artistProfileImageUrl = artistMap.has("profileImageUrl") ? artistMap.get("profileImageUrl").getAsString() : "Default image URL";
+            List<String> artistGenres = artistMap.has("genres")
+                    ? Arrays.asList(artistMap.get("genres").getAsString().split(","))
+                    : new ArrayList<>();
+            Artist artist = new Artist(artistName, artistBio, artistProfileImageUrl, artistGenres);
+
+            // Parse album from musicMap
+            JsonObject albumMap = musicMap.getAsJsonObject("album");
+            String albumTitle = albumMap.get("title").getAsString();
+            LocalDate albumReleaseDate = LocalDate.parse(albumMap.get("releaseDate").getAsString());
+            String albumCoverImageUrl = albumMap.has("coverImageUrl") ? albumMap.get("coverImageUrl").getAsString() : "Default cover image URL";
+            String albumDescription = albumMap.has("description") ? albumMap.get("description").getAsString() : "Default description";
+            String albumGenre = albumMap.get("genre").getAsString();
+            Album album = new Album(albumTitle, artist, albumReleaseDate, albumCoverImageUrl, albumGenre, albumDescription);
+
+            // Parse music from musicMap
+            String title = musicMap.get("title").getAsString();
+            String genre = musicMap.get("genre").getAsString();
+            int durationInSeconds = musicMap.get("durationInSeconds").getAsInt();
+            LocalDate releaseDate = LocalDate.parse(musicMap.get("releaseDate").getAsString());
+            int id = musicMap.get("id").getAsInt();
+            String extension = musicMap.get("extension").getAsString();
+            Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64Data);
+
+            // Add music to user's tracks
+            user.getTracks().add(music);
+
+            // Save music to database
+            DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+            Document musicDocument = new Document("title", title)
+                    .append("artist", artist)
+                    .append("genre", genre)
+                    .append("durationInSeconds", durationInSeconds)
+                    .append("releaseDate", java.util.Date.from(releaseDate.atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                    .append("album", album)
+                    .append("id", id)
+                    .append("extension", extension)
+                    .append("base64Data", base64Data); // Store base64 data if needed
+            databaseConnection.getDatabase().getCollection("musics").insertOne(musicDocument);
+
+            response.addProperty("status", Response.uploadMusicSuccess.toString());
+            response.addProperty("message", "Music uploaded successfully");
+        } catch (Exception e) {
+            response.addProperty("status", Response.uploadMusicFailed.toString());
+            response.addProperty("message", "Failed to upload music: " + e.getMessage());
+        }
+
+        return response;
+    }
 
 }
