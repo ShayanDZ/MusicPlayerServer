@@ -8,8 +8,8 @@ import java.util.Objects;
 public class Playlist {
 
     // Immutable properties
-    private final String id;
-    private final Music owner;
+    private final int id;
+    private final User owner;
     private final LocalDate createdDate;
 
     // Mutable properties
@@ -17,18 +17,17 @@ public class Playlist {
     private String description;
     private final List<Music> tracks;
 
-    public Playlist(String name, Music owner, String description) {
+    public Playlist(String name, User owner, String description) {
         this.name = name;
         this.owner = owner;
         this.description = description;
         this.createdDate = LocalDate.now();
-        this.id = generateId(name, owner);
+        this.id = generateId(name, owner,createdDate);
         this.tracks = new ArrayList<>();
     }
 
-    private String generateId(String name, Music owner) {
-        // TODO: implement custom playlist ID logic (e.g., username + name + date)
-        return "";
+    private static int generateId(String name, User owner, LocalDate createdDate) {
+        return (name + owner.getUsername() + createdDate.toString()).hashCode();
     }
 
 

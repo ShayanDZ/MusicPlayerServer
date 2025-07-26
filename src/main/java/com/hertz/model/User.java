@@ -32,7 +32,7 @@ public class User {
         this.hashedPassword = hashedPassword;
         this.fullName = fullName;
         this.registrationDate = registrationDate;
-        this.id = (id == null || id == 0) ? (generateId(username, email)) : id;
+        this.id = (id == null || id == 0) ? (generateId(username, email,registrationDate)) : id;
     }
 
     public List<Music> getTracks() {
@@ -43,8 +43,8 @@ public class User {
         this.profileImageUrl = profileImageUrl;
     }
 
-    private static int generateId(String username, String email) {
-        return (username + email).hashCode();
+    private static int generateId(String username, String email, LocalDate registrationDate) {
+        return (username + email + registrationDate.toString()).hashCode();
     }
 
     public List<Music> getLikedSongs() {
