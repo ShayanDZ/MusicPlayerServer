@@ -22,5 +22,8 @@ public enum Response{
     deleteMusicSuccess,
     deleteMusicFailed,
     musicNotFoundForUser,
+    downloadMusicSuccess,
+    downloadMusicFailed,
+    dataNotFound,
 }
 
