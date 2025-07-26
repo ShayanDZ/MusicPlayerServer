@@ -32,10 +32,12 @@ public class UserRepository {
                     String hashedPassword = userDocument.getString("hashedPassword");
                     LocalDate registrationDate = userDocument.getDate("registrationDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                     int id = userDocument.getInteger("id");
+                    ArrayList tracks = (ArrayList) userDocument.get("tracks");
                     ArrayList likedSongs = (ArrayList) userDocument.get("likedSongs");
                     ArrayList recentlyPlayed = (ArrayList) userDocument.get("recentlyPlayed");
                     ArrayList playlists = (ArrayList) userDocument.get("playlists");
                     User user = new User(username, email, fullName, hashedPassword, registrationDate,id);
+                    user.getTracks().addAll(tracks);
                     user.getLikedSongs().addAll(likedSongs);
                     user.getRecentlyPlayed().addAll(recentlyPlayed);
                     user.getPlaylists().addAll(playlists);
@@ -60,6 +62,7 @@ public class UserRepository {
                 .append("hashedPassword", user.getHashedPassword())
                 .append("registrationDate", java.util.Date.from(user.getRegistrationDate().atStartOfDay(ZoneId.systemDefault()).toInstant()))
                 .append("id", user.getId())
+                .append("tracks", user.getTracks())
                 .append("likedSongs", user.getLikedSongs())
                 .append("recentlyPlayed", user.getRecentlyPlayed())
                 .append("playlists", user.getPlaylists());

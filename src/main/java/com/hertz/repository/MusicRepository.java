@@ -26,12 +26,14 @@ public class MusicRepository {
                 .forEach((Block<? super Document>) (Document musicDocument) -> {
                     String title = musicDocument.getString("title");
                     Artist artist = (Artist)musicDocument.get("artist");
-                    Genre genre = (Genre) musicDocument.get("genre");
+                    String genre = musicDocument.getString("genre");
                     int durationInSeconds = musicDocument.getInteger("durationInSeconds");
                     LocalDate releaseDate = musicDocument.getDate("releaseDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                     Album album = (Album)musicDocument.get("album");
                     int id = musicDocument.getInteger("id");
-                    Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id);
+                    String extension = musicDocument.getString("extension");
+                    String base64 = musicDocument.getString("base64");
+                    Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension,base64);
                     musicList.add(music);
                 });
 

@@ -14,5 +14,7 @@ public enum Response{
     passwordUpdateFailed,
     InvalidRequest,
     USER_ALREADY_EXIST,
+    uploadMusicSuccess,
+    uploadMusicFailed,
 }
 

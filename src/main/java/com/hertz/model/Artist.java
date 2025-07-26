@@ -12,7 +12,7 @@ public class Artist {
     private final String name;
     private final String bio;
     private final String profileImageUrl;
-    private final List<Genre> genres;
+    private final List<String> genres;
 
     // Mutable properties
     private final List<Music> songs;
@@ -34,7 +34,7 @@ public class Artist {
         return profileImageUrl;
     }
 
-    public List<Genre> getGenres() {
+    public List<String> getGenres() {
         return genres;
     }
 
@@ -46,7 +46,7 @@ public class Artist {
         return albums;
     }
 
-    public Artist(String name, String bio, String profileImageUrl, List<Genre> genres) {
+    public Artist(String name, String bio, String profileImageUrl, List<String> genres) {
         this.name = name;
         this.bio = bio;
         this.profileImageUrl = profileImageUrl;

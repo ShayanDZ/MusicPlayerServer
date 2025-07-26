@@ -11,15 +11,14 @@ public class Album {
     private final String title;
     private final Artist artist;
     private final LocalDate releaseDate;
-    private final Genre genre;
+    private final String genre;
     private final String description;
 
     // Mutable properties
     private String coverImageUrl = null;
-    private final List<Music> tracks;
 
     public Album(String title, Artist artist, LocalDate releaseDate,
-                 String coverImageUrl, Genre genre, String description) {
+                 String coverImageUrl, String genre, String description) {
         this.title = title;
         this.artist = artist;
         this.releaseDate = releaseDate;
@@ -27,7 +26,6 @@ public class Album {
         this.genre = genre;
         this.description = description;
         this.id = generateId(title, artist);
-        this.tracks = new ArrayList<Music>();
     }
 
     private String generateId(String title, Artist artist) {

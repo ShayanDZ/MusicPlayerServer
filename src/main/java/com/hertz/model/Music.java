@@ -9,28 +9,41 @@ public class Music {
     private final int id;
     private final String title;
     private final Artist artist;
-    private final Genre genre;
+    private final String genre;
     private final int durationInSeconds;
     private final LocalDate releaseDate;
     private final LocalDate addedDate;
     private final Album album;
+    private final String extension;
 
     // Mutable properties
+    private String base64;
+
+    public String getBase64() {
+        return base64;
+    }
+
+    public void setBase64(String base64) {
+        this.base64 = base64;
+    }
+
     private int likeCount;
     private boolean isLiked = false;
 
-    public Music(String title, Artist artist, Genre genre, int durationInSeconds, LocalDate releaseDate, Album album, Integer id) {
+    public Music(String title, Artist artist, String genre, int durationInSeconds, LocalDate releaseDate, Album album, Integer id, String extension, String base64) {
         this.title = title;
         this.artist = artist;
         this.genre = genre;
         this.durationInSeconds = durationInSeconds;
         this.releaseDate = releaseDate;
+        this.extension = extension;
         this.addedDate = LocalDate.now();
         this.album = album;
+        this.base64 = base64;
         this.id = ((id==null || id==0)?(generateId(title, artist, releaseDate)):id);
     }
 
-    private int generateId(String title, Artist artist, LocalDate releaseDate) {
+    private static int generateId(String title, Artist artist, LocalDate releaseDate) {
         return (title + artist.getName() + releaseDate.toString()).hashCode();
     }
 

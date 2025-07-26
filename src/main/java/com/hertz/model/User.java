@@ -21,26 +21,29 @@ public class User {
     private String hashedPassword;
     private String fullName;
     private String profileImageUrl;
+    private final List<Music> tracks = new ArrayList<>();
     private final List<Music> likedSongs = new ArrayList<>();
     private final List<Music> recentlyPlayed = new ArrayList<>();
     private final List<Playlist> playlists = new ArrayList<>();
 
-    public User(String username, String email, String fullName, String hashedPassword, LocalDate registrationDate,Integer id) {
+    public User(String username, String email, String fullName, String hashedPassword, LocalDate registrationDate, Integer id) {
         this.username = username;
         this.email = email;
         this.hashedPassword = hashedPassword;
         this.fullName = fullName;
         this.registrationDate = registrationDate;
-        this.id = (id==null || id==0)?(generateId(username, email)):id;
+        this.id = (id == null || id == 0) ? (generateId(username, email)) : id;
     }
 
-
+    public List<Music> getTracks() {
+        return tracks;
+    }
 
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }
 
-    private int generateId(String username, String email) {
+    private static int generateId(String username, String email) {
         return (username + email).hashCode();
     }
 
@@ -95,6 +98,7 @@ public class User {
         User user = (User) o;
         return Objects.equals(id, user.id);
     }
+
     @Override
     public int hashCode() {
         return Objects.hash(id);
