@@ -183,13 +183,13 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleUploadMusic(JsonObject payload) {
         JsonObject response = new JsonObject();
-        int userId = payload.get("userId").getAsInt();
+        String username = payload.get("username").getAsString();
         JsonObject musicMap = payload.getAsJsonObject("musicMap");
         String base64Data = payload.get("base64Data").getAsString();
 
         UserRepository userRepository = UserRepository.getInstance();
         User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getId() == userId)
+                .filter(u -> u.getUsername().equals(username))
                 .findFirst()
                 .orElse(null);
 
@@ -203,21 +203,15 @@ public class ClientHandler extends Thread {
             // Parse artist from musicMap
             JsonObject artistMap = musicMap.getAsJsonObject("artist");
             String artistName = artistMap.get("name").getAsString();
-            String artistBio = artistMap.has("bio") ? artistMap.get("bio").getAsString() : "Default bio";
-            String artistProfileImageUrl = artistMap.has("profileImageUrl") ? artistMap.get("profileImageUrl").getAsString() : "Default image URL";
-            List<String> artistGenres = artistMap.has("genres")
-                    ? Arrays.asList(artistMap.get("genres").getAsString().split(","))
-                    : new ArrayList<>();
-            Artist artist = new Artist(artistName, artistBio, artistProfileImageUrl, artistGenres);
+            Integer artist_id = artistMap.has("id") ? artistMap.get("id").getAsInt() : 0;
+
+            Artist artist = new Artist(artistName,artist_id);
 
             // Parse album from musicMap
             JsonObject albumMap = musicMap.getAsJsonObject("album");
             String albumTitle = albumMap.get("title").getAsString();
-            LocalDate albumReleaseDate = LocalDate.parse(albumMap.get("releaseDate").getAsString());
-            String albumCoverImageUrl = albumMap.has("coverImageUrl") ? albumMap.get("coverImageUrl").getAsString() : "Default cover image URL";
-            String albumDescription = albumMap.has("description") ? albumMap.get("description").getAsString() : "Default description";
-            String albumGenre = albumMap.get("genre").getAsString();
-            Album album = new Album(albumTitle, artist, albumReleaseDate, albumCoverImageUrl, albumGenre, albumDescription);
+            Integer album_id = albumMap.has("id") ? albumMap.get("id").getAsInt() : 0;
+            Album album = new Album(albumTitle, artist,album_id);
 
             // Parse music from musicMap
             String title = musicMap.get("title").getAsString();
@@ -256,11 +250,11 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleGetUserMusicList(JsonObject payload) {
         JsonObject response = new JsonObject();
-        int userId = payload.get("userId").getAsInt();
+        String username = payload.get("username").getAsString();
 
         UserRepository userRepository = UserRepository.getInstance();
         User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getId() == userId)
+                .filter(u -> u.getUsername().equals(username))
                 .findFirst()
                 .orElse(null);
 
@@ -298,14 +292,14 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleDeleteMusic(JsonObject payload) {
         JsonObject response = new JsonObject();
-        int userId = payload.get("userId").getAsInt();
+        String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
         UserRepository userRepository = UserRepository.getInstance();
         MusicRepository musicRepository = MusicRepository.getInstance();
 
         User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getId() == userId)
+                .filter(u -> u.getUsername().equals(username))
                 .findFirst()
                 .orElse(null);
 
@@ -347,14 +341,14 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleDownloadMusic(JsonObject payload) {
         JsonObject response = new JsonObject();
-        int userId = payload.get("userId").getAsInt();
+        String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
         UserRepository userRepository = UserRepository.getInstance();
         MusicRepository musicRepository = MusicRepository.getInstance();
 
         User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getId() == userId)
+                .filter(u -> u.getUsername().equals(username))
                 .findFirst()
                 .orElse(null);
 
@@ -394,14 +388,14 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleLikeSong(JsonObject payload) {
         JsonObject response = new JsonObject();
-        int userId = payload.get("userId").getAsInt();
+        String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
         UserRepository userRepository = UserRepository.getInstance();
         MusicRepository musicRepository = MusicRepository.getInstance();
 
         User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getId() == userId)
+                .filter(u -> u.getUsername().equals(username))
                 .findFirst()
                 .orElse(null);
 
@@ -437,7 +431,7 @@ public class ClientHandler extends Thread {
                                 new Document("$set", new Document("likeCount", music.getLikeCount())));
 
                 databaseConnection.getDatabase().getCollection("users")
-                        .updateOne(new Document("id", userId),
+                        .updateOne(new Document("id", user.getId()),
                                 new Document("$set", new Document("likedSongs", user.getLikedSongs())));
 
                 response.addProperty("status", Response.likeSuccess.toString());
@@ -453,14 +447,14 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleDislikeSong(JsonObject payload) {
         JsonObject response = new JsonObject();
-        int userId = payload.get("userId").getAsInt();
+        String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
         UserRepository userRepository = UserRepository.getInstance();
         MusicRepository musicRepository = MusicRepository.getInstance();
 
         User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getId() == userId)
+                .filter(u -> u.getUsername().equals(username))
                 .findFirst()
                 .orElse(null);
 
@@ -496,7 +490,7 @@ public class ClientHandler extends Thread {
                                 new Document("$set", new Document("likeCount", music.getLikeCount())));
 
                 databaseConnection.getDatabase().getCollection("users")
-                        .updateOne(new Document("id", userId),
+                        .updateOne(new Document("id", user.getId()),
                                 new Document("$set", new Document("likedSongs", user.getLikedSongs())));
 
                 response.addProperty("status", Response.dislikeSuccess.toString());
@@ -512,12 +506,12 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleGetUserPlaylists(JsonObject payload) {
         JsonObject response = new JsonObject();
-        int userId = payload.get("userId").getAsInt();
+        String username = payload.get("username").getAsString();
 
         UserRepository userRepository = UserRepository.getInstance();
 
         User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getId() == userId)
+                .filter(u -> u.getUsername().equals(username))
                 .findFirst()
                 .orElse(null);
 

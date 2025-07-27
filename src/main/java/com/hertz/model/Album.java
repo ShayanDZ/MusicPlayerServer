@@ -7,30 +7,20 @@ import java.util.Objects;
 public class Album {
 
     // Immutable properties
-    private final String id;
+    private final int id;
     private final String title;
     private final Artist artist;
-    private final LocalDate releaseDate;
-    private final String genre;
-    private final String description;
 
     // Mutable properties
-    private String coverImageUrl = null;
 
-    public Album(String title, Artist artist, LocalDate releaseDate,
-                 String coverImageUrl, String genre, String description) {
+    public Album(String title, Artist artist,Integer id) {
         this.title = title;
         this.artist = artist;
-        this.releaseDate = releaseDate;
-        this.coverImageUrl = coverImageUrl;
-        this.genre = genre;
-        this.description = description;
-        this.id = generateId(title, artist);
+        this.id = (id == null || id == 0) ? (generateId(title, artist)) : id;
     }
 
-    private String generateId(String title, Artist artist) {
-        // TODO: implement a complex ID generation logic for albums
-        return "";
+    private int generateId(String title, Artist artist) {
+        return (title+artist.getName() + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
     }
 
     @Override

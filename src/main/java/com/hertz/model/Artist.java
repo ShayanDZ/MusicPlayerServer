@@ -8,17 +8,12 @@ import java.util.Objects;
 public class Artist {
 
     // Immutable properties
-    private final String id;
+    private final int id;
     private final String name;
-    private final String bio;
-    private final String profileImageUrl;
-    private final List<String> genres;
 
     // Mutable properties
-    private final List<Music> songs;
-    private final List<Album> albums;
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -26,39 +21,13 @@ public class Artist {
         return name;
     }
 
-    public String getBio() {
-        return bio;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public List<String> getGenres() {
-        return genres;
-    }
-
-    public List<Music> getSongs() {
-        return songs;
-    }
-
-    public List<Album> getAlbums() {
-        return albums;
-    }
-
-    public Artist(String name, String bio, String profileImageUrl, List<String> genres) {
+    public Artist(String name,Integer id) {
         this.name = name;
-        this.bio = bio;
-        this.profileImageUrl = profileImageUrl;
-        this.genres = genres != null ? new ArrayList<>(genres) : new ArrayList<>();
-        this.id = generateId(name);
-        this.songs = new ArrayList<>();
-        this.albums = new ArrayList<>();
+        this.id = (id == null || id == 0) ? (generateId(name)) : id;
     }
 
-    private String generateId(String name) {
-        // TODO: implement a complex ID generation logic
-        return "";
+    private int generateId(String name) {
+        return (name+ System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
     }
 
 
