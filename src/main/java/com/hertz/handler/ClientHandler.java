@@ -7,6 +7,7 @@ import com.hertz.model.*;
 import com.hertz.repository.MusicRepository;
 import com.hertz.repository.UserRepository;
 import com.hertz.utils.DatabaseConnection;
+import com.hertz.utils.DateParser;
 import com.hertz.utils.PasswordUtils;
 import org.bson.Document;
 
@@ -15,7 +16,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -128,7 +129,7 @@ public class ClientHandler extends Thread {
         }
 
         java.lang.String hashedPassword = PasswordUtils.hashPassword(password);
-        User user = new User(username, email, fullname, hashedPassword, LocalDate.now(), 0);
+        User user = new User(username, email, fullname, hashedPassword, LocalDateTime.now(), 0);
         Response responseMessage = UserRepository.getInstance().addUser(user);
         if (!Response.signUpSuccess.equals(responseMessage)) {
             JsonObject errorResponse = new JsonObject();
@@ -217,7 +218,7 @@ public class ClientHandler extends Thread {
             String title = musicMap.get("title").getAsString();
             String genre = musicMap.get("genre").getAsString();
             int durationInSeconds = musicMap.get("durationInSeconds").getAsInt();
-            LocalDate releaseDate = LocalDate.parse(musicMap.get("releaseDate").getAsString());
+            LocalDateTime releaseDate = DateParser.parseIso8601Date(musicMap.get("releaseDate").getAsString());
             int id = musicMap.get("id").getAsInt();
             String extension = musicMap.get("extension").getAsString();
             Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64Data);
@@ -228,11 +229,11 @@ public class ClientHandler extends Thread {
             // Save music to database
             DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
             Document musicDocument = new Document("title", title)
-                    .append("artist", artist)
+                    .append("artist", artist.convertToDocument())
                     .append("genre", genre)
                     .append("durationInSeconds", durationInSeconds)
-                    .append("releaseDate", java.util.Date.from(releaseDate.atStartOfDay(ZoneId.systemDefault()).toInstant()))
-                    .append("album", album)
+                    .append("releaseDate", java.util.Date.from(releaseDate.atZone(ZoneId.systemDefault()).toInstant()))
+                    .append("album", album.convertToDocument())
                     .append("id", id)
                     .append("extension", extension)
                     .append("base64Data", base64Data); // Store base64 data if needed
