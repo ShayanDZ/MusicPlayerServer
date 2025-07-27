@@ -1,9 +1,9 @@
 package com.hertz.model;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import org.bson.Document;
+
 import java.util.Objects;
+
 public class Album {
 
     // Immutable properties
@@ -13,14 +13,14 @@ public class Album {
 
     // Mutable properties
 
-    public Album(String title, Artist artist,Integer id) {
+    public Album(String title, Artist artist, Integer id) {
         this.title = title;
         this.artist = artist;
         this.id = (id == null || id == 0) ? (generateId(title, artist)) : id;
     }
 
     private int generateId(String title, Artist artist) {
-        return (title+artist.getName() + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
+        return (title + artist.getName() + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
     }
 
     @Override
@@ -43,6 +43,14 @@ public class Album {
     @Override
     public String toString() {
         return String.format("Album: %s by %s", title, artist.toString());
+    }
+
+    public Document convertToDocument() {
+        Document albumDocument = new Document();
+        albumDocument.append("id", this.id);
+        albumDocument.append("title", this.title);
+        albumDocument.append("artist", this.artist.convertToDocument());
+        return albumDocument;
     }
 }
 

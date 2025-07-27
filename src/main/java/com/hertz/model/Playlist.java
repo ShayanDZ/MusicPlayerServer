@@ -1,6 +1,6 @@
 package com.hertz.model;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -10,7 +10,7 @@ public class Playlist {
     // Immutable properties
     private final int id;
     private final User owner;
-    private final LocalDate createdDate;
+    private final LocalDateTime createdDate;
     private final List<Music> tracks;
 
     // Mutable properties
@@ -34,7 +34,7 @@ public class Playlist {
         return owner;
     }
 
-    public LocalDate getCreatedDate() {
+    public LocalDateTime getCreatedDate() {
         return createdDate;
     }
 
@@ -54,12 +54,12 @@ public class Playlist {
         this.name = name;
         this.owner = owner;
         this.description = description;
-        this.createdDate = LocalDate.now();
+        this.createdDate = LocalDateTime.now();
         this.id = generateId(name, owner,createdDate);
         this.tracks = new ArrayList<>();
     }
 
-    private static int generateId(String name, User owner, LocalDate createdDate) {
+    private static int generateId(String name, User owner, LocalDateTime createdDate) {
         return (name + owner.getUsername() + createdDate.toString()).hashCode();
     }
 

@@ -1,6 +1,6 @@
 package com.hertz.model;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Music {
@@ -11,8 +11,8 @@ public class Music {
     private final Artist artist;
     private final String genre;
     private final int durationInSeconds;
-    private final LocalDate releaseDate;
-    private final LocalDate addedDate;
+    private final LocalDateTime releaseDate;
+    private final LocalDateTime addedDate;
     private final Album album;
     private final String extension;
 
@@ -30,20 +30,20 @@ public class Music {
     private int likeCount;
     private boolean isLiked = false;
 
-    public Music(String title, Artist artist, String genre, int durationInSeconds, LocalDate releaseDate, Album album, Integer id, String extension, String base64) {
+    public Music(String title, Artist artist, String genre, int durationInSeconds, LocalDateTime releaseDate, Album album, Integer id, String extension, String base64) {
         this.title = title;
         this.artist = artist;
         this.genre = genre;
         this.durationInSeconds = durationInSeconds;
         this.releaseDate = releaseDate;
         this.extension = extension;
-        this.addedDate = LocalDate.now();
+        this.addedDate = LocalDateTime.now();
         this.album = album;
         this.base64 = base64;
         this.id = ((id==null || id==0)?(generateId(title, artist, releaseDate)):id);
     }
 
-    private static int generateId(String title, Artist artist, LocalDate releaseDate) {
+    private static int generateId(String title, Artist artist, LocalDateTime releaseDate) {
         return (title + artist.getName() + releaseDate.toString()).hashCode();
     }
 
@@ -60,7 +60,7 @@ public class Music {
         return durationInSeconds;
     }
 
-    public LocalDate getReleaseDate() {
+    public LocalDateTime getReleaseDate() {
         return releaseDate;
     }
 
@@ -68,7 +68,7 @@ public class Music {
         this.likeCount = likeCount;
     }
 
-    public LocalDate getAddedDate() {
+    public LocalDateTime getAddedDate() {
         return addedDate;
     }
 

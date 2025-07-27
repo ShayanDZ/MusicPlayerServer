@@ -1,8 +1,7 @@
 package com.hertz.model;
 
+import org.bson.Document;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public class Artist {
@@ -11,7 +10,17 @@ public class Artist {
     private final int id;
     private final String name;
 
-    // Mutable properties
+    // Default constructor for serialization frameworks
+    public Artist() {
+        this.id = 0;
+        this.name = "";
+    }
+
+    // Constructor with parameters
+    public Artist(String name, Integer id) {
+        this.name = name;
+        this.id = (id == null || id == 0) ? generateId(name) : id;
+    }
 
     public int getId() {
         return id;
@@ -21,15 +30,9 @@ public class Artist {
         return name;
     }
 
-    public Artist(String name,Integer id) {
-        this.name = name;
-        this.id = (id == null || id == 0) ? (generateId(name)) : id;
-    }
-
     private int generateId(String name) {
-        return (name+ System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
+        return (name + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -51,5 +54,11 @@ public class Artist {
     @Override
     public String toString() {
         return String.format("Artist: %s", name);
+    }
+    public Document convertToDocument() {
+        Document artistDocument = new Document();
+        artistDocument.append("id", this.getId());
+        artistDocument.append("name", this.getName());
+        return artistDocument;
     }
 }

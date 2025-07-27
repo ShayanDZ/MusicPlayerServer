@@ -1,13 +1,9 @@
 package com.hertz.model;
 
-import org.mindrot.jbcrypt.BCrypt;
-
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import static com.hertz.utils.PasswordUtils.hashPassword;
 
 public class User {
 
@@ -15,7 +11,7 @@ public class User {
     private final int id;
     private final String username;
     private final String email;
-    private final LocalDate registrationDate;
+    private final LocalDateTime registrationDate;
 
     // Mutable properties
     private String hashedPassword;
@@ -26,7 +22,7 @@ public class User {
     private final List<Music> recentlyPlayed = new ArrayList<>();
     private final List<Playlist> playlists = new ArrayList<>();
 
-    public User(String username, String email, String fullName, String hashedPassword, LocalDate registrationDate, Integer id) {
+    public User(String username, String email, String fullName, String hashedPassword, LocalDateTime registrationDate, Integer id) {
         this.username = username;
         this.email = email;
         this.hashedPassword = hashedPassword;
@@ -43,7 +39,7 @@ public class User {
         this.profileImageUrl = profileImageUrl;
     }
 
-    private static int generateId(String username, String email, LocalDate registrationDate) {
+    private static int generateId(String username, String email, LocalDateTime registrationDate) {
         return (username + email + registrationDate.toString()).hashCode();
     }
 
@@ -67,7 +63,7 @@ public class User {
         return email;
     }
 
-    public LocalDate getRegistrationDate() {
+    public LocalDateTime getRegistrationDate() {
         return registrationDate;
     }
 
