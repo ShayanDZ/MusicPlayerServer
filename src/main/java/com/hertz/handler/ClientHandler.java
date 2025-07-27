@@ -206,13 +206,13 @@ public class ClientHandler extends Thread {
             String artistName = artistMap.get("name").getAsString();
             Integer artist_id = artistMap.has("id") ? artistMap.get("id").getAsInt() : 0;
 
-            Artist artist = new Artist(artistName,artist_id);
+            Artist artist = new Artist(artistName, artist_id);
 
             // Parse album from musicMap
             JsonObject albumMap = musicMap.getAsJsonObject("album");
             String albumTitle = albumMap.get("title").getAsString();
             Integer album_id = albumMap.has("id") ? albumMap.get("id").getAsInt() : 0;
-            Album album = new Album(albumTitle, artist,album_id);
+            Album album = new Album(albumTitle, artist, album_id);
 
             // Parse music from musicMap
             String title = musicMap.get("title").getAsString();
@@ -222,7 +222,12 @@ public class ClientHandler extends Thread {
             int id = musicMap.get("id").getAsInt();
             String extension = musicMap.get("extension").getAsString();
             Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64Data);
-
+            MusicRepository musicRepository = MusicRepository.getInstance();
+            if( musicRepository.getAllMusic().stream().anyMatch(m -> m.getId() == id)) {
+                response.addProperty("status", Response.musicAlreadyExists.toString());
+                response.addProperty("message", "Music with this ID already exists");
+                return response;
+            }
             // Add music to user's tracks
             user.getTracks().add(music);
 
@@ -429,12 +434,14 @@ public class ClientHandler extends Thread {
                 DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
                 databaseConnection.getDatabase().getCollection("musics")
                         .updateOne(new Document("id", musicId),
-                                new Document("$set", new Document("likeCount", music.getLikeCount())));
+                                new Document("$set", music.convertToDocument()));
 
                 databaseConnection.getDatabase().getCollection("users")
                         .updateOne(new Document("id", user.getId()),
-                                new Document("$set", new Document("likedSongs", user.getLikedSongs())));
-
+                                new Document("$set", new Document("likedSongs",
+                                        user.getLikedSongs().stream()
+                                                .map(Music::convertToDocument)
+                                                .collect(java.util.stream.Collectors.toList()))));
                 response.addProperty("status", Response.likeSuccess.toString());
                 response.addProperty("message", "Song liked successfully");
             }
