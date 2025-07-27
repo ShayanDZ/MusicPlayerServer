@@ -1,6 +1,9 @@
 package com.hertz.model;
 
+import org.bson.Document;
+
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 
 public class Music {
@@ -112,5 +115,43 @@ public class Music {
 
     public String getTitle() {
         return title;
+    }
+    public Document convertToDocument() {
+        Document musicDocument = new Document();
+        musicDocument.append("id", this.id);
+        musicDocument.append("title", this.title);
+        musicDocument.append("artist", this.artist.convertToDocument());
+        musicDocument.append("genre", this.genre);
+        musicDocument.append("durationInSeconds", this.durationInSeconds);
+        musicDocument.append("releaseDate", java.util.Date.from(this.releaseDate.atZone(ZoneId.systemDefault()).toInstant()));
+        musicDocument.append("addedDate", java.util.Date.from(this.addedDate.atZone(ZoneId.systemDefault()).toInstant()));
+        musicDocument.append("album", this.album.convertToDocument());
+        musicDocument.append("extension", this.extension);
+        musicDocument.append("base64", this.base64);
+        musicDocument.append("likeCount", this.likeCount);
+        musicDocument.append("isLiked", this.isLiked);
+        return musicDocument;
+    }
+
+    public static Music fromDocument(Document document) {
+        int id = document.getInteger("id");
+        String title = document.getString("title");
+        Document artistDocument = (Document) document.get("artist");
+        Artist artist = Artist.fromDocument(artistDocument);
+        String genre = document.getString("genre");
+        int durationInSeconds = document.getInteger("durationInSeconds");
+        LocalDateTime releaseDate = document.getDate("releaseDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        LocalDateTime addedDate = document.getDate("addedDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        Document albumDocument = (Document) document.get("album");
+        Album album = Album.fromDocument(albumDocument);
+        String extension = document.getString("extension");
+        String base64 = document.getString("base64");
+        int likeCount = document.getInteger("likeCount");
+        boolean isLiked = document.getBoolean("isLiked");
+
+        Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64);
+        music.setLikeCount(likeCount);
+        music.isLiked = isLiked;
+        return music;
     }
 }

@@ -52,5 +52,12 @@ public class Album {
         albumDocument.append("artist", this.artist.convertToDocument());
         return albumDocument;
     }
+    public static Album fromDocument(Document document) {
+        int id = document.getInteger("id");
+        String title = document.getString("title");
+        Document artistDocument = (Document) document.get("artist");
+        Artist artist = Artist.fromDocument(artistDocument);
+        return new Album(title, artist, id);
+    }
 }
 

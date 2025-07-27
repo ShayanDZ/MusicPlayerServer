@@ -61,4 +61,9 @@ public class Artist {
         artistDocument.append("name", this.getName());
         return artistDocument;
     }
+    public static Artist fromDocument(Document document) {
+        int id = document.getInteger("id");
+        String name = document.getString("name");
+        return new Artist(name, id);
+    }
 }

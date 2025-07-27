@@ -25,11 +25,13 @@ public class MusicRepository {
                 .find()
                 .forEach((Block<? super Document>) (Document musicDocument) -> {
                     String title = musicDocument.getString("title");
-                    Artist artist = (Artist)musicDocument.get("artist");
+                    Document artistDocument = (Document) musicDocument.get("artist");
+                    Artist artist = Artist.fromDocument(artistDocument);
                     String genre = musicDocument.getString("genre");
                     int durationInSeconds = musicDocument.getInteger("durationInSeconds");
                     LocalDateTime releaseDate = musicDocument.getDate("releaseDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                    Album album = (Album)musicDocument.get("album");
+                    Document albumDocument = (Document) musicDocument.get("album");
+                    Album album = Album.fromDocument(albumDocument);
                     int id = musicDocument.getInteger("id");
                     String extension = musicDocument.getString("extension");
                     String base64 = musicDocument.getString("base64");
