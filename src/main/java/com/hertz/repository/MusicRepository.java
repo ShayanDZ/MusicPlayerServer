@@ -5,7 +5,7 @@ import com.hertz.utils.DatabaseConnection;
 import com.mongodb.Block;
 import org.bson.Document;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,7 @@ public class MusicRepository {
                     Artist artist = (Artist)musicDocument.get("artist");
                     String genre = musicDocument.getString("genre");
                     int durationInSeconds = musicDocument.getInteger("durationInSeconds");
-                    LocalDate releaseDate = musicDocument.getDate("releaseDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                    LocalDateTime releaseDate = musicDocument.getDate("releaseDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
                     Album album = (Album)musicDocument.get("album");
                     int id = musicDocument.getInteger("id");
                     String extension = musicDocument.getString("extension");

@@ -7,7 +7,7 @@ import com.hertz.utils.DatabaseConnection;
 import com.mongodb.Block;
 import org.bson.Document;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,7 @@ public class UserRepository {
                     String email = userDocument.getString("email");
                     String fullName = userDocument.getString("fullName");
                     String hashedPassword = userDocument.getString("hashedPassword");
-                    LocalDate registrationDate = userDocument.getDate("registrationDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                    LocalDateTime registrationDate = userDocument.getDate("registrationDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
                     int id = userDocument.getInteger("id");
                     ArrayList tracks = (ArrayList) userDocument.get("tracks");
                     ArrayList likedSongs = (ArrayList) userDocument.get("likedSongs");
@@ -68,7 +68,7 @@ public class UserRepository {
                 .append("email", user.getEmail())
                 .append("fullName", user.getFullName())
                 .append("hashedPassword", user.getHashedPassword())
-                .append("registrationDate", java.util.Date.from(user.getRegistrationDate().atStartOfDay(ZoneId.systemDefault()).toInstant()))
+                .append("registrationDate", java.util.Date.from(user.getRegistrationDate().atZone(ZoneId.systemDefault()).toInstant()))
                 .append("id", user.getId())
                 .append("tracks", user.getTracks())
                 .append("likedSongs", user.getLikedSongs())
