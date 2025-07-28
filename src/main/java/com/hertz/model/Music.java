@@ -45,6 +45,18 @@ public class Music {
         this.base64 = base64;
         this.id = ((id==null || id==0)?(generateId(title, artist, releaseDate)):id);
     }
+    public Music(String title, Artist artist, String genre, int durationInSeconds, LocalDateTime releaseDate,LocalDateTime addedDate, Album album, Integer id, String extension, String base64) {
+        this.title = title;
+        this.artist = artist;
+        this.genre = genre;
+        this.durationInSeconds = durationInSeconds;
+        this.releaseDate = releaseDate;
+        this.extension = extension;
+        this.addedDate = addedDate;
+        this.album = album;
+        this.base64 = base64;
+        this.id = ((id==null || id==0)?(generateId(title, artist, releaseDate)):id);
+    }
 
     private static int generateId(String title, Artist artist, LocalDateTime releaseDate) {
         return (title + artist.getName() + releaseDate.toString()).hashCode();
@@ -149,7 +161,7 @@ public class Music {
         int likeCount = document.getInteger("likeCount");
         boolean isLiked = document.getBoolean("isLiked");
 
-        Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64);
+        Music music = new Music(title, artist, genre, durationInSeconds, releaseDate,addedDate, album, id, extension, base64);
         music.setLikeCount(likeCount);
         music.isLiked = isLiked;
         return music;

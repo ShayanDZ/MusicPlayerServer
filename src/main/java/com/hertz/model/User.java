@@ -2,6 +2,7 @@ package com.hertz.model;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,9 +18,9 @@ public class User {
     private String hashedPassword;
     private String fullName;
     private String profileImageUrl;
-    private final List<Music> tracks = new ArrayList<>();
-    private final List<Music> likedSongs = new ArrayList<>();
-    private final List<Music> recentlyPlayed = new ArrayList<>();
+    private final List<Integer> tracks = new ArrayList<>();
+    private final List<Integer> likedSongs = new ArrayList<>();
+    private final Playlist recentlyPlayed;
     private final List<Playlist> playlists = new ArrayList<>();
 
     public User(String username, String email, String fullName, String hashedPassword, LocalDateTime registrationDate, Integer id) {
@@ -28,10 +29,11 @@ public class User {
         this.hashedPassword = hashedPassword;
         this.fullName = fullName;
         this.registrationDate = registrationDate;
-        this.id = (id == null || id == 0) ? (generateId(username, email,registrationDate)) : id;
+        this.id = (id == null || id == 0) ? (generateId(username, email, registrationDate)) : id;
+        recentlyPlayed = new Playlist("Recently Played", this.id, "Tracks played recently",new LinkedList<Integer>());
     }
 
-    public List<Music> getTracks() {
+    public List<Integer> getTracks() {
         return tracks;
     }
 
@@ -40,14 +42,14 @@ public class User {
     }
 
     private static int generateId(String username, String email, LocalDateTime registrationDate) {
-        return (username + email + registrationDate.toString()).hashCode();
+        return (username + email + registrationDate.toString() + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode();
     }
 
-    public List<Music> getLikedSongs() {
+    public List<Integer> getLikedSongs() {
         return likedSongs;
     }
 
-    public List<Music> getRecentlyPlayed() {
+    public Playlist getRecentlyPlayed() {
         return recentlyPlayed;
     }
 
@@ -109,5 +111,15 @@ public class User {
                 ", registrationDate=" + registrationDate +
                 ", fullName='" + fullName + '\'' +
                 ", profileImageUrl='" + profileImageUrl;
+    }
+    public boolean addTrack(int trackId) {
+        if (!tracks.contains(trackId)) {
+            tracks.add(trackId);
+            return true;
+        }
+        return false;
+    }
+    public boolean removeTrack(int trackId) {
+        return tracks.remove(Integer.valueOf(trackId));
     }
 }
