@@ -19,7 +19,7 @@ public class DatabaseConnection {
         System.out.println("Connected to the database successfully");
     }
 
-    public static DatabaseConnection getInstance() {
+    public static synchronized DatabaseConnection getInstance() {
         if (instance == null) {
             instance = new DatabaseConnection();
         }
