@@ -49,4 +49,49 @@ public class MusicRepository {
     public List<Music> getAllMusic() {
         return musicList;
     }
+    public Response addMusic(Music music) {
+        if (musicList.contains(music)) {
+            return Response.musicAlreadyExists;
+        }
+        musicList.add(music);
+        DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+        Document musicDocument = new Document("id", music.getId())
+                .append("title", music.getTitle())
+                .append("artist", music.getArtist().convertToDocument())
+                .append("genre", music.getGenre())
+                .append("durationInSeconds", music.getDurationInSeconds())
+                .append("releaseDate", java.util.Date.from(music.getReleaseDate().atZone(ZoneId.systemDefault()).toInstant()))
+                .append("addedDate", java.util.Date.from(music.getAddedDate().atZone(ZoneId.systemDefault()).toInstant()))
+                .append("album", music.getAlbum().convertToDocument())
+                .append("extension", music.getExtension())
+                .append("base64", music.getBase64())
+                .append("likeCount", music.getLikeCount())
+                .append("isLiked", music.isLiked());
+        databaseConnection.getDatabase().getCollection("musics").insertOne(musicDocument);
+        return Response.uploadMusicSuccess;
+    }
+    public boolean updateMusic(Music music) {
+        try {
+            DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+            Document updatedMusicDocument = new Document("id", music.getId())
+                    .append("title", music.getTitle())
+                    .append("artist", music.getArtist().convertToDocument())
+                    .append("genre", music.getGenre())
+                    .append("durationInSeconds", music.getDurationInSeconds())
+                    .append("releaseDate", java.util.Date.from(music.getReleaseDate().atZone(ZoneId.systemDefault()).toInstant()))
+                    .append("addedDate", java.util.Date.from(music.getAddedDate().atZone(ZoneId.systemDefault()).toInstant()))
+                    .append("album", music.getAlbum().convertToDocument())
+                    .append("extension", music.getExtension())
+                    .append("base64", music.getBase64())
+                    .append("likeCount", music.getLikeCount())
+                    .append("isLiked", music.isLiked());
+
+            databaseConnection.getDatabase().getCollection("musics")
+                    .updateOne(new Document("id", music.getId()), new Document("$set", updatedMusicDocument));
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

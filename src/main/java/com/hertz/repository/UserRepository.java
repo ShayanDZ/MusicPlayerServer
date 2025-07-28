@@ -1,6 +1,7 @@
 package com.hertz.repository;
 
 
+import com.hertz.model.Playlist;
 import com.hertz.model.Response;
 import com.hertz.model.User;
 import com.hertz.utils.DatabaseConnection;
@@ -34,7 +35,7 @@ public class UserRepository {
                     int id = userDocument.getInteger("id");
                     ArrayList tracks = (ArrayList) userDocument.get("tracks");
                     ArrayList likedSongs = (ArrayList) userDocument.get("likedSongs");
-                    ArrayList recentlyPlayed = (ArrayList) userDocument.get("recentlyPlayed");
+                    Playlist recentlyPlayed = Playlist.fromDocument((Document) userDocument.get("recentlyPlayed"));
                     ArrayList playlists = (ArrayList) userDocument.get("playlists");
                     User user = new User(username, email, fullName, hashedPassword, registrationDate,id);
                     if (tracks != null) {
@@ -43,8 +44,8 @@ public class UserRepository {
                     if (likedSongs != null) {
                         user.getLikedSongs().addAll(likedSongs);
                     }
-                    if (recentlyPlayed != null) {
-                        user.getRecentlyPlayed().addAll(recentlyPlayed);
+                    if (recentlyPlayed.getTracks() != null) {
+                        user.getRecentlyPlayed().getTracks().addAll(recentlyPlayed.getTracks());
                     }
                     if (playlists != null) {
                         user.getPlaylists().addAll(playlists);
@@ -52,7 +53,7 @@ public class UserRepository {
                     userList.add(user);
                 });
     }
-    public static UserRepository getInstance() {
+    public static synchronized UserRepository getInstance() {
         if (instance == null) {
             instance = new UserRepository();
         }
@@ -72,12 +73,37 @@ public class UserRepository {
                 .append("id", user.getId())
                 .append("tracks", user.getTracks())
                 .append("likedSongs", user.getLikedSongs())
-                .append("recentlyPlayed", user.getRecentlyPlayed())
+                .append("recentlyPlayed", user.getRecentlyPlayed().convertToDocument())
                 .append("playlists", user.getPlaylists());
         databaseConnection.getDatabase().getCollection("users").insertOne(userDocument);
         return Response.signUpSuccess;
     }
     public List<User> getAllUser() {
         return userList;
+    }
+
+    public boolean updateUser(User user) {
+        try {
+            DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+            Document updatedUserDocument = new Document("username", user.getUsername())
+                    .append("email", user.getEmail())
+                    .append("fullName", user.getFullName())
+                    .append("hashedPassword", user.getHashedPassword())
+                    .append("registrationDate", java.util.Date.from(user.getRegistrationDate().atZone(ZoneId.systemDefault()).toInstant()))
+                    .append("id", user.getId())
+                    .append("tracks", user.getTracks())
+                    .append("likedSongs", user.getLikedSongs())
+                    .append("recentlyPlayed", user.getRecentlyPlayed().convertToDocument())
+                    .append("playlists", user.getPlaylists().stream()
+                            .map(Playlist::convertToDocument)
+                            .toList());
+
+            databaseConnection.getDatabase().getCollection("users")
+                    .updateOne(new Document("id", user.getId()), new Document("$set", updatedUserDocument));
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }
