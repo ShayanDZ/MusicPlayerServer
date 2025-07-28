@@ -19,7 +19,6 @@ import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.hertz.utils.PasswordUtils.verifyPassword;
@@ -70,7 +69,7 @@ public class ClientHandler extends Thread {
                     responseJson = handleGetUserMusicList(requestJson.getAsJsonObject("Payload"));
                     break;
                 case "deleteMusic":
-                    responseJson = handleDeleteMusic(requestJson.getAsJsonObject("payload"));
+                    responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
                     break;
                 case "downloadMusic":
                     responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
@@ -130,16 +129,9 @@ public class ClientHandler extends Thread {
 
         java.lang.String hashedPassword = PasswordUtils.hashPassword(password);
         User user = new User(username, email, fullname, hashedPassword, LocalDateTime.now(), 0);
-        Response responseMessage = UserRepository.getInstance().addUser(user);
-        if (!Response.signUpSuccess.equals(responseMessage)) {
-            JsonObject errorResponse = new JsonObject();
-            errorResponse.addProperty("status", responseMessage.toString());
-            errorResponse.addProperty("message", responseMessage.toString());
-            return errorResponse;
-        }
-        userRepository.getAllUser().add(user);
-        response.addProperty("status", Response.signUpSuccess.toString());
-        response.addProperty("message", "User signed up successfully");
+        Response responseMessage = userRepository.addUser(user);
+        response.addProperty("status", responseMessage.toString());
+        response.addProperty("message", responseMessage.toString());
         return response;
     }
 
@@ -222,30 +214,14 @@ public class ClientHandler extends Thread {
             int id = musicMap.get("id").getAsInt();
             String extension = musicMap.get("extension").getAsString();
             Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64Data);
-            MusicRepository musicRepository = MusicRepository.getInstance();
-            if( musicRepository.getAllMusic().stream().anyMatch(m -> m.getId() == id)) {
-                response.addProperty("status", Response.musicAlreadyExists.toString());
-                response.addProperty("message", "Music with this ID already exists");
-                return response;
-            }
             // Add music to user's tracks
-            user.getTracks().add(music);
-
+            user.addTrack(id);
+            userRepository.updateUser(user);
             // Save music to database
-            DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
-            Document musicDocument = new Document("title", title)
-                    .append("artist", artist.convertToDocument())
-                    .append("genre", genre)
-                    .append("durationInSeconds", durationInSeconds)
-                    .append("releaseDate", java.util.Date.from(releaseDate.atZone(ZoneId.systemDefault()).toInstant()))
-                    .append("album", album.convertToDocument())
-                    .append("id", id)
-                    .append("extension", extension)
-                    .append("base64Data", base64Data); // Store base64 data if needed
-            databaseConnection.getDatabase().getCollection("musics").insertOne(musicDocument);
+            Response responseMessage = MusicRepository.getInstance().addMusic(music);
 
-            response.addProperty("status", Response.uploadMusicSuccess.toString());
-            response.addProperty("message", "Music uploaded successfully");
+            response.addProperty("status", responseMessage.toString());
+            response.addProperty("message", responseMessage.toString());
         } catch (Exception e) {
             response.addProperty("status", Response.uploadMusicFailed.toString());
             response.addProperty("message", "Failed to upload music: " + e.getMessage());
@@ -271,9 +247,12 @@ public class ClientHandler extends Thread {
         }
 
         try {
-            List<Music> userMusicList = user.getTracks();
+            List<Integer> userMusicListIDs = user.getTracks();
             List<JsonObject> musicJsonList = new ArrayList<>();
-
+            MusicRepository musicRepository = MusicRepository.getInstance();
+            List<Music> userMusicList = musicRepository.getAllMusic().stream()
+                    .filter(music -> userMusicListIDs.contains(music.getId()))
+                    .toList();
             for (Music music : userMusicList) {
                 JsonObject musicJson = new JsonObject();
                 musicJson.addProperty("id", music.getId());
@@ -328,7 +307,7 @@ public class ClientHandler extends Thread {
 
         try {
             // Remove music from user's tracks
-            boolean removed = user.getTracks().removeIf(m -> m.getId() == musicId);
+            boolean removed = user.removeTrack(musicId);
 
             if (removed) {
                 response.addProperty("status", Response.deleteMusicSuccess.toString());
@@ -423,25 +402,17 @@ public class ClientHandler extends Thread {
         }
 
         try {
-            if (user.getLikedSongs().contains(music)) {
+            if (user.getLikedSongs().contains(music.getId())) {
                 response.addProperty("status", Response.alreadyLiked.toString());
                 response.addProperty("message", "Song is already liked by the user");
             } else {
-                user.getLikedSongs().add(music);
+                user.getLikedSongs().add(music.getId());
                 music.setLikeCount(music.getLikeCount() + 1);
 
                 // Update the music's likeCount in the database
-                DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
-                databaseConnection.getDatabase().getCollection("musics")
-                        .updateOne(new Document("id", musicId),
-                                new Document("$set", music.convertToDocument()));
+                musicRepository.updateMusic(music);
 
-                databaseConnection.getDatabase().getCollection("users")
-                        .updateOne(new Document("id", user.getId()),
-                                new Document("$set", new Document("likedSongs",
-                                        user.getLikedSongs().stream()
-                                                .map(Music::convertToDocument)
-                                                .collect(java.util.stream.Collectors.toList()))));
+                userRepository.updateUser(user); // Ensure user is updated in the repository
                 response.addProperty("status", Response.likeSuccess.toString());
                 response.addProperty("message", "Song liked successfully");
             }
@@ -484,22 +455,16 @@ public class ClientHandler extends Thread {
         }
 
         try {
-            if (!user.getLikedSongs().contains(music)) {
+            if (!user.getLikedSongs().contains(music.getId())) {
                 response.addProperty("status", Response.NotLiked.toString());
                 response.addProperty("message", "Song is not liked by the user");
             } else {
-                user.getLikedSongs().remove(music);
+                user.getLikedSongs().remove(Integer.valueOf(music.getId()));
                 music.setLikeCount(music.getLikeCount() - 1);
 
                 // Update the music's likeCount in the database
-                DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
-                databaseConnection.getDatabase().getCollection("musics")
-                        .updateOne(new Document("id", musicId),
-                                new Document("$set", new Document("likeCount", music.getLikeCount())));
-
-                databaseConnection.getDatabase().getCollection("users")
-                        .updateOne(new Document("id", user.getId()),
-                                new Document("$set", new Document("likedSongs", user.getLikedSongs())));
+                musicRepository.updateMusic(music);
+                userRepository.updateUser(user);
 
                 response.addProperty("status", Response.dislikeSuccess.toString());
                 response.addProperty("message", "Song disliked successfully");
@@ -539,7 +504,7 @@ public class ClientHandler extends Thread {
                 playlistJson.addProperty("name", playlist.getName());
                 playlistJson.addProperty("description", playlist.getDescription());
                 playlistJson.addProperty("createdDate", playlist.getCreatedDate().toString());
-                playlistJson.addProperty("owner", playlist.getOwner().getUsername());
+                playlistJson.addProperty("ownerId", playlist.getOwnerID());
                 playlistJsonList.add(playlistJson);
             }
 
