@@ -262,6 +262,10 @@ public class ClientHandler extends Thread {
                 musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
                 musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
                 musicJson.addProperty("extension", music.getExtension());
+                musicJson.addProperty("likeCount", music.getLikeCount());
+                // Check if the user has liked this song
+                boolean isLiked = user.getLikedSongs().contains(music.getId());
+                musicJson.addProperty("isLiked", isLiked);
                 musicJsonList.add(musicJson);
             }
 
