@@ -460,7 +460,9 @@ public class ClientHandler extends Thread {
                 response.addProperty("message", "Song is not liked by the user");
             } else {
                 user.getLikedSongs().remove(Integer.valueOf(music.getId()));
-                music.setLikeCount(music.getLikeCount() - 1);
+                // Ensure like count doesn't go negative
+                int newLikeCount = Math.max(0, music.getLikeCount() - 1);
+                music.setLikeCount(newLikeCount);
 
                 // Update the music's likeCount in the database
                 musicRepository.updateMusic(music);
