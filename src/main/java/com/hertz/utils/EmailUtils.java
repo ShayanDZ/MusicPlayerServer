@@ -6,18 +6,22 @@ import javax.mail.internet.MimeMessage;
 import java.util.Properties;
 
 public class EmailUtils {
+    //HertzMusicApp
+    //nrmf tezw lgwa vmdy
 
     // TODO
-    private static final String SMTP_HOST = "your_smtp_host"; // e.g., "smtp.gmail.com"
-    private static final String SMTP_PORT = "your_smtp_port";   // e.g., "587" (TLS) or "465" (SSL)
-    private static final String SMTP_USERNAME = "your_email_address";  // e.g., "your_email@gmail.com"
-    private static final String SMTP_PASSWORD = "your_email_password";  // Your email password or app password
+    private static final String SMTP_HOST = "smtp.gmail.com"; // e.g., "smtp.gmail.com"
+    private static final String SMTP_PORT = "465";   // e.g., "587" (TLS) or "465" (SSL)
+    private static final String SMTP_USERNAME = "MusicAppShayan@gmail.com";  // e.g., "your_email@gmail.com"
+    private static final String SMTP_PASSWORD = "nrmf tezw lgwa vmdy";  // Your email password or app password
 
     public static void sendEmail(String to, String subject, String body) {
         // Set up properties for the SMTP server
         Properties props = new Properties();
         props.put("mail.smtp.host", SMTP_HOST);
         props.put("mail.smtp.port", SMTP_PORT);
+        props.put("mail.smtp.socketFactory.port", "465");
+        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 
         // Enable STARTTLS if your server requires it (e.g., Gmail)
         props.put("mail.smtp.starttls.enable", "true");
@@ -33,7 +37,7 @@ public class EmailUtils {
                 return new PasswordAuthentication(SMTP_USERNAME, SMTP_PASSWORD);
             }
         });
-
+        session.setDebug(true);
         try {
             // Create a new MimeMessage object
             Message message = new MimeMessage(session);

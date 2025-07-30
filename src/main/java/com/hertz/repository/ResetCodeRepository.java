@@ -6,17 +6,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ResetCodeRepository {
+    private static ResetCodeRepository instance;
     private final Map<String, ResetCode> codeStore = new HashMap<>();
-
-    public void saveResetCode(ResetCode resetCode) {
+    private ResetCodeRepository() {
+    }
+    public static ResetCodeRepository getInstance() {
+        if (instance == null) {
+            instance = new ResetCodeRepository();
+        }
+        return instance;
+    }
+    public synchronized void saveResetCode(ResetCode resetCode) {
         codeStore.put(resetCode.getEmail(), resetCode);
     }
 
-    public ResetCode findByEmail(String email) {
+    public synchronized ResetCode findByEmail(String email) {
         return codeStore.get(email);
     }
 
-    public void deleteResetCode(String email) {
+    public synchronized void deleteResetCode(String email) {
         codeStore.remove(email);
     }
 }

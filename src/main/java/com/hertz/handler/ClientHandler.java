@@ -5,11 +5,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.hertz.model.*;
 import com.hertz.repository.MusicRepository;
+import com.hertz.repository.ResetCodeRepository;
 import com.hertz.repository.UserRepository;
 import com.hertz.utils.DatabaseConnection;
 import com.hertz.utils.DateParser;
+import com.hertz.utils.EmailUtils;
 import com.hertz.utils.PasswordUtils;
-import org.bson.Document;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,7 +18,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +25,8 @@ import static com.hertz.utils.PasswordUtils.verifyPassword;
 
 public class ClientHandler extends Thread {
     private static final Gson gson = new Gson();
+    private static final UserRepository userRepository = UserRepository.getInstance();
+    private static final MusicRepository musicRepository = MusicRepository.getInstance();
     private Socket socket;
 
     public ClientHandler(Socket socket) {
@@ -109,7 +111,6 @@ public class ClientHandler extends Thread {
         java.lang.String username = payload.get("username").getAsString();
         java.lang.String email = payload.get("email").getAsString();
         java.lang.String password = payload.get("password").getAsString();
-        UserRepository userRepository = UserRepository.getInstance();
 
         boolean emailExist = userRepository.getAllUser().stream()
                 .anyMatch(user -> user.getEmail().equals(email));
@@ -142,10 +143,7 @@ public class ClientHandler extends Thread {
         System.out.println("Username received: " + username);
         System.out.println("Password received: " + password);
 
-        User temp = UserRepository.getInstance().getAllUser().stream()
-                .filter(user -> user.getUsername().equals(username))
-                .findAny()
-                .orElse(null);
+        User temp = userRepository.findByUsername(username);
 
         if (temp != null) {
             System.out.println("User found: " + temp.getUsername());
@@ -180,7 +178,6 @@ public class ClientHandler extends Thread {
         JsonObject musicMap = payload.getAsJsonObject("musicMap");
         String base64Data = payload.get("base64Data").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
@@ -215,7 +212,7 @@ public class ClientHandler extends Thread {
             user.addTrack(id);
             userRepository.updateUser(user);
             // Save music to database
-            Response responseMessage = MusicRepository.getInstance().addMusic(music);
+            Response responseMessage = musicRepository.addMusic(music);
 
             response.addProperty("status", responseMessage.toString());
             response.addProperty("message", responseMessage.toString());
@@ -231,7 +228,6 @@ public class ClientHandler extends Thread {
         JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
@@ -243,7 +239,6 @@ public class ClientHandler extends Thread {
         try {
             List<Integer> userMusicListIDs = user.getTracks();
             List<JsonObject> musicJsonList = new ArrayList<>();
-            MusicRepository musicRepository = MusicRepository.getInstance();
             List<Music> userMusicList = musicRepository.getAllMusic().stream()
                     .filter(music -> userMusicListIDs.contains(music.getId()))
                     .toList();
@@ -278,8 +273,6 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        MusicRepository musicRepository = MusicRepository.getInstance();
 
         User user = userRepository.findByUsername(username);
 
@@ -324,8 +317,6 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        MusicRepository musicRepository = MusicRepository.getInstance();
 
         User user = userRepository.findByUsername(username);
 
@@ -368,8 +359,6 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        MusicRepository musicRepository = MusicRepository.getInstance();
 
         User user = userRepository.findByUsername(username);
 
@@ -418,8 +407,6 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        MusicRepository musicRepository = MusicRepository.getInstance();
 
         User user = userRepository.findByUsername(username);
 
@@ -466,8 +453,6 @@ public class ClientHandler extends Thread {
         JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
-
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
@@ -499,11 +484,11 @@ public class ClientHandler extends Thread {
 
         return response;
     }
+
     private JsonObject handleUpdateProfile(JsonObject payload) {
         JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
 
         // Find the user by username
         User user = userRepository.findByUsername(username);
@@ -539,13 +524,13 @@ public class ClientHandler extends Thread {
 
         return response;
     }
+
     private JsonObject handleUpdatePassword(JsonObject payload) {
         JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
+        boolean isForgotten = payload.has("isForgotten") && payload.get("isForgotten").getAsBoolean();
         String oldPassword = payload.get("oldPassword").getAsString();
         String newPassword = payload.get("newPassword").getAsString();
-
-        UserRepository userRepository = UserRepository.getInstance();
 
         // Find the user by username
         User user = userRepository.findByUsername(username);
@@ -557,10 +542,12 @@ public class ClientHandler extends Thread {
         }
 
         // Verify old password
-        if (!PasswordUtils.verifyPassword(user.getHashedPassword(), oldPassword)) {
-            response.addProperty("status", Response.incorrectPassword.toString());
-            response.addProperty("message", "Old password is incorrect");
-            return response;
+        if (!isForgotten) {
+            if (!PasswordUtils.verifyPassword(user.getHashedPassword(), oldPassword)) {
+                response.addProperty("status", Response.incorrectPassword.toString());
+                response.addProperty("message", "Old password is incorrect");
+                return response;
+            }
         }
 
         try {
@@ -583,6 +570,55 @@ public class ClientHandler extends Thread {
             response.addProperty("message", "Error changing password: " + e.getMessage());
         }
 
+        return response;
+    }
+
+    private JsonObject handleForgetPasswordRequest(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        String email = payload.get("email").getAsString();
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found with the provided email");
+            return response;
+        }
+        ForgotPasswordHandler forgotPasswordHandler = new ForgotPasswordHandler(userRepository, ResetCodeRepository.getInstance());
+        try {
+            String result = forgotPasswordHandler.forgotPassword(email);
+            response.addProperty("status", Response.resetCodeSent.toString());
+            response.addProperty("message", result);
+        } catch (IllegalArgumentException e) {
+            response.addProperty("status", Response.resetCodeFailed.toString());
+            response.addProperty("message", e.getMessage());
+        } catch (Exception e) {
+            response.addProperty("status", Response.resetCodeFailed.toString());
+            response.addProperty("message", "An error occurred while processing the request: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private JsonObject handleVerifyResetCode(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        String email = payload.get("email").getAsString();
+        String code = payload.get("code").getAsString();
+
+        ForgotPasswordHandler forgotPasswordHandler = new ForgotPasswordHandler(userRepository, ResetCodeRepository.getInstance());
+        try {
+            boolean isValid = forgotPasswordHandler.verifyCode(email, code);
+            if (isValid) {
+                response.addProperty("status", Response.resetCodeVerified.toString());
+                response.addProperty("message", "Reset code verified successfully");
+            } else {
+                response.addProperty("status", Response.resetCodeInvalid.toString());
+                response.addProperty("message", "Invalid or expired reset code");
+            }
+        } catch (IllegalArgumentException e) {
+            response.addProperty("status", Response.resetCodeInvalid.toString());
+            response.addProperty("message", e.getMessage());
+        } catch (Exception e) {
+            response.addProperty("status", Response.resetCodeFailed.toString());
+            response.addProperty("message", "An error occurred while verifying the reset code: " + e.getMessage());
+        }
         return response;
     }
 }
