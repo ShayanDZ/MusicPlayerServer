@@ -76,16 +76,13 @@ public class ClientHandler extends Thread {
                     // For downloadMusic, send response and close connection to signal completion
                     if (responseJson.has("status") && 
                         responseJson.get("status").getAsString().equals(Response.downloadMusicSuccess.toString())) {
-                        System.out.println("Sending download response");
                         String responseString = responseJson.toString();
-                        System.out.println("Response JSON length: " + responseString.length());
+                        System.out.println("Sending download response: " + responseString.length() + " characters");
                         
                         // Send the response using PrintWriter to ensure proper JSON transmission
                         try {
                             out.print(responseString);
                             out.flush();
-                            System.out.println("Response sent completely: " + responseString.length() + " characters");
-                            
                             // Small delay to ensure complete transmission
                             try {
                                 Thread.sleep(50);
@@ -95,9 +92,7 @@ public class ClientHandler extends Thread {
                         } catch (Exception e) {
                             System.out.println("Error sending response: " + e.getMessage());
                         }
-                        
                         // Close the connection to signal completion
-                        System.out.println("Download response sent, closing connection");
                         socket.close();
                         return; // Exit early
                     } else {
