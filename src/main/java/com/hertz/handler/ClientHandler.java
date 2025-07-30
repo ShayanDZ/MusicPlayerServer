@@ -73,7 +73,38 @@ public class ClientHandler extends Thread {
                     break;
                 case "downloadMusic":
                     responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
-                    break;
+                    // For downloadMusic, send response and close connection to signal completion
+                    if (responseJson.has("status") && 
+                        responseJson.get("status").getAsString().equals(Response.downloadMusicSuccess.toString())) {
+                        System.out.println("Sending download response");
+                        String responseString = responseJson.toString();
+                        System.out.println("Response JSON length: " + responseString.length());
+                        
+                        // Send the response using PrintWriter to ensure proper JSON transmission
+                        try {
+                            out.print(responseString);
+                            out.flush();
+                            System.out.println("Response sent completely: " + responseString.length() + " characters");
+                            
+                            // Small delay to ensure complete transmission
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Error sending response: " + e.getMessage());
+                        }
+                        
+                        // Close the connection to signal completion
+                        System.out.println("Download response sent, closing connection");
+                        socket.close();
+                        return; // Exit early
+                    } else {
+                        System.out.println("Sending download error response");
+                        out.println(responseJson.toString());
+                    }
+                    return; // Exit early for downloadMusic
                 case "likeSong":
                     responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
                     break;
@@ -361,13 +392,17 @@ public class ClientHandler extends Thread {
         try {
             String base64Data = music.getBase64();
             if (base64Data != null && !base64Data.isEmpty()) {
+                System.out.println("Sending music download for user: " + username + ", music: " + music.getTitle());
+                System.out.println("Base64 data length: " + base64Data.length());
                 response.addProperty("status", Response.downloadMusicSuccess.toString());
                 response.addProperty("Payload", base64Data);
             } else {
+                System.out.println("No base64 data available for music: " + music.getTitle());
                 response.addProperty("status", Response.dataNotFound.toString());
                 response.addProperty("message", "Base64 data not available for the requested music");
             }
         } catch (Exception e) {
+            System.out.println("Error during music download: " + e.getMessage());
             response.addProperty("status", Response.downloadMusicFailed.toString());
             response.addProperty("message", "Failed to retrieve music: " + e.getMessage());
         }
