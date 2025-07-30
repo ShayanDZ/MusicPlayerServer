@@ -181,10 +181,7 @@ public class ClientHandler extends Thread {
         String base64Data = payload.get("base64Data").getAsString();
 
         UserRepository userRepository = UserRepository.getInstance();
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -235,10 +232,7 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
 
         UserRepository userRepository = UserRepository.getInstance();
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -287,10 +281,7 @@ public class ClientHandler extends Thread {
         UserRepository userRepository = UserRepository.getInstance();
         MusicRepository musicRepository = MusicRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -336,10 +327,7 @@ public class ClientHandler extends Thread {
         UserRepository userRepository = UserRepository.getInstance();
         MusicRepository musicRepository = MusicRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -383,10 +371,7 @@ public class ClientHandler extends Thread {
         UserRepository userRepository = UserRepository.getInstance();
         MusicRepository musicRepository = MusicRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -436,10 +421,7 @@ public class ClientHandler extends Thread {
         UserRepository userRepository = UserRepository.getInstance();
         MusicRepository musicRepository = MusicRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -447,10 +429,7 @@ public class ClientHandler extends Thread {
             return response;
         }
 
-        Music music = musicRepository.getAllMusic().stream()
-                .filter(m -> m.getId() == musicId)
-                .findFirst()
-                .orElse(null);
+        Music music = musicRepository.findMusicById(musicId);
 
         if (music == null) {
             response.addProperty("status", Response.musicNotFound.toString());
@@ -489,10 +468,7 @@ public class ClientHandler extends Thread {
 
         UserRepository userRepository = UserRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -519,6 +495,92 @@ public class ClientHandler extends Thread {
         } catch (Exception e) {
             response.addProperty("status", Response.getUserPlaylistsFailed.toString());
             response.addProperty("message", "Failed to retrieve playlists: " + e.getMessage());
+        }
+
+        return response;
+    }
+    private JsonObject handleUpdateProfile(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        String username = payload.get("username").getAsString();
+
+        UserRepository userRepository = UserRepository.getInstance();
+
+        // Find the user by username
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        try {
+            if (payload.has("fullName")) {
+                user.setFullName(payload.get("fullName").getAsString());
+            }
+            if (payload.has("email")) {
+                user.setEmail(payload.get("email").getAsString());
+            }
+
+            // Update the user in the repository
+            boolean updateSuccess = userRepository.updateUser(user);
+
+            if (updateSuccess) {
+                response.addProperty("status", Response.profileUpdateSuccess.toString());
+                response.addProperty("message", "Profile updated successfully");
+            } else {
+                response.addProperty("status", Response.profileUpdateFailed.toString());
+                response.addProperty("message", "Failed to update profile");
+            }
+        } catch (Exception e) {
+            response.addProperty("status", Response.profileUpdateFailed.toString());
+            response.addProperty("message", "Error updating profile: " + e.getMessage());
+        }
+
+        return response;
+    }
+    private JsonObject handleUpdatePassword(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        String username = payload.get("username").getAsString();
+        String oldPassword = payload.get("oldPassword").getAsString();
+        String newPassword = payload.get("newPassword").getAsString();
+
+        UserRepository userRepository = UserRepository.getInstance();
+
+        // Find the user by username
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        // Verify old password
+        if (!PasswordUtils.verifyPassword(user.getHashedPassword(), oldPassword)) {
+            response.addProperty("status", Response.incorrectPassword.toString());
+            response.addProperty("message", "Old password is incorrect");
+            return response;
+        }
+
+        try {
+            // Hash and update the new password
+            String hashedPassword = PasswordUtils.hashPassword(newPassword);
+            user.setHashedPassword(hashedPassword);
+
+            // Update the user in the repository
+            boolean updateSuccess = userRepository.updateUser(user);
+
+            if (updateSuccess) {
+                response.addProperty("status", Response.passwordUpdateSuccess.toString());
+                response.addProperty("message", "Password changed successfully");
+            } else {
+                response.addProperty("status", Response.passwordUpdateFailed.toString());
+                response.addProperty("message", "Failed to change password");
+            }
+        } catch (Exception e) {
+            response.addProperty("status", Response.passwordUpdateFailed.toString());
+            response.addProperty("message", "Error changing password: " + e.getMessage());
         }
 
         return response;

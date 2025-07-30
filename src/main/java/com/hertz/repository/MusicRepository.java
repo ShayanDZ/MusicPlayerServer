@@ -94,4 +94,12 @@ public class MusicRepository {
             return false;
         }
     }
+    public Music findMusicById(int id) {
+        for (Music music : musicList) {
+            if (music.getId() == id) {
+                return music;
+            }
+        }
+        return null; // Return null if no music with the given ID is found
+    }
 }

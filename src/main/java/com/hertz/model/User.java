@@ -11,11 +11,24 @@ public class User {
     // Immutable properties
     private final int id;
     private final String username;
-    private final String email;
     private final LocalDateTime registrationDate;
 
     // Mutable properties
+    private String email;
     private String hashedPassword;
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setHashedPassword(String hashedPassword) {
+        this.hashedPassword = hashedPassword;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
     private String fullName;
     private String profileImageUrl;
     private final List<Integer> tracks = new ArrayList<>();
