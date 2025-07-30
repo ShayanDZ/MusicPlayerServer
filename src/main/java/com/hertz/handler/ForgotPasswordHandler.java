@@ -1,22 +1,21 @@
 package com.hertz.handler;
 
-import com.hertz.model.ResetToken;
+import com.hertz.model.ResetCode;
 import com.hertz.model.User;
-import com.hertz.repository.ResetTokenRepository;
+import com.hertz.repository.ResetCodeRepository;
 import com.hertz.repository.UserRepository;
 import com.hertz.utils.EmailUtils;
-import com.hertz.utils.PasswordUtils;
-import com.hertz.utils.TokenUtils;
 
 import java.time.LocalDateTime;
+import java.util.Random;
 
 public class ForgotPasswordHandler {
     private final UserRepository userRepository;
-    private final ResetTokenRepository resetTokenRepository;
+    private final ResetCodeRepository resetCodeRepository;
 
-    public ForgotPasswordHandler(UserRepository userRepository, ResetTokenRepository resetTokenRepository) {
+    public ForgotPasswordHandler(UserRepository userRepository, ResetCodeRepository resetCodeRepository) {
         this.userRepository = userRepository;
-        this.resetTokenRepository = resetTokenRepository;
+        this.resetCodeRepository = resetCodeRepository;
     }
 
     public String forgotPassword(String email) {
@@ -25,42 +24,32 @@ public class ForgotPasswordHandler {
             throw new IllegalArgumentException("User with email not found");
         }
 
-        // Generate a secure token and set expiration time
-        String token = TokenUtils.generateSecureToken();
-        ResetToken resetToken = new ResetToken(user.getUsername(), token, LocalDateTime.now().plusHours(1));
+        // Generate a 6-digit code
+        String code = String.format("%06d", new Random().nextInt(1000000));
+        ResetCode resetCode = new ResetCode(email, code, LocalDateTime.now().plusMinutes(10));
 
-        // Save the reset token in the repository
-        resetTokenRepository.saveResetToken(resetToken);
+        // Save the reset code in the repository
+        resetCodeRepository.saveResetCode(resetCode);
 
-        // Send the reset link via email
-        String resetLink = "http://localhost:8080/reset-password?token=" + token;
-        EmailUtils.sendEmail(email, "Password Reset Request", "Click the link to reset your password: " + resetLink);
+        // Send the code via email
+        EmailUtils.sendEmail(email, "Password Reset Code", "Your reset code is: " + code);
 
-        return "Password reset link sent to your email.";
+        return "Reset code sent to your email.";
     }
 
-    public String resetPassword(String token, String newPassword) {
-        ResetToken resetToken = resetTokenRepository.findByToken(token);
+    public boolean verifyCode(String email, String code) {
+        ResetCode resetCode = resetCodeRepository.findByEmail(email);
 
-        if (resetToken == null || resetToken.getExpiryTime().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Invalid or expired token");
+        if (resetCode == null || resetCode.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Invalid or expired code");
         }
 
-        User user = userRepository.findByUsername(resetToken.getUsername());
-        if (user == null) {
-            throw new IllegalArgumentException("User not found");
+        if (!resetCode.getCode().equals(code)) {
+            throw new IllegalArgumentException("Incorrect code");
         }
 
-        // Hash and update the new password
-        String hashedPassword = PasswordUtils.hashPassword(newPassword);
-        user.setHashedPassword(hashedPassword);
-
-        // Update the user in the repository
-        userRepository.updateUser(user);
-
-        // Remove the used reset token
-        resetTokenRepository.deleteResetToken(token);
-
-        return "Password reset successfully.";
+        // Code is valid, remove it from the repository
+        resetCodeRepository.deleteResetCode(email);
+        return true;
     }
 }
