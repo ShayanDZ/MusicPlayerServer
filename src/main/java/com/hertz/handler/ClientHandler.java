@@ -85,7 +85,7 @@ public class ClientHandler extends Thread {
                             out.flush();
                             // Small delay to ensure complete transmission
                             try {
-                                Thread.sleep(50);
+                                Thread.sleep(100);
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                             }
