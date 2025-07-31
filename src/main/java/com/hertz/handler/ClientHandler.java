@@ -38,7 +38,7 @@ public class ClientHandler extends Thread {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
             StringBuilder requestBuilder = new StringBuilder();
-            java.lang.String inputLine;
+            String inputLine;
 
             // Read the request from the client
             while ((inputLine = in.readLine()) != null) {
@@ -48,48 +48,62 @@ public class ClientHandler extends Thread {
                 }
             }
 
-            java.lang.String requestString = requestBuilder.toString();
+            String requestString = requestBuilder.toString();
             System.out.println("Request received: " + requestString);
 
             // Parse the JSON request using GSON
             JsonObject requestJson = gson.fromJson(requestString, JsonObject.class);
-            java.lang.String action = requestJson.get("Request").getAsString();
+            String action = requestJson.get("Request").getAsString();
 
             JsonObject responseJson;
 
             switch (action) {
-                case "signUp":
-                    responseJson = handleSignUp(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "logIn":
-                    responseJson = handleLogIn(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "uploadMusic":
-                    responseJson = handleUploadMusic(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "getUserMusicList":
-                    responseJson = handleGetUserMusicList(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "deleteMusic":
-                    responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "downloadMusic":
+                case "signUp" -> responseJson = handleSignUp(requestJson.getAsJsonObject("Payload"));
+                case "logIn" -> responseJson = handleLogIn(requestJson.getAsJsonObject("Payload"));
+                case "uploadMusic" -> responseJson = handleUploadMusic(requestJson.getAsJsonObject("Payload"));
+                case "getUserMusicList" ->
+                        responseJson = handleGetUserMusicList(requestJson.getAsJsonObject("Payload"));
+                case "deleteMusic" -> responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
+                case "downloadMusic" -> {
                     responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "likeSong":
-                    responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "dislikeSong":
-                    responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "getUserPlaylists":
-                    responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
-                    break;
-                default:
+                    responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
+                    // For downloadMusic, send response and close connection to signal completion
+                    if (responseJson.has("status") &&
+                            responseJson.get("status").getAsString().equals(Response.downloadMusicSuccess.toString())) {
+                        String responseString = responseJson.toString();
+                        System.out.println("Sending download response: " + responseString.length() + " characters");
+
+                        // Send the response using PrintWriter to ensure proper JSON transmission
+                        try {
+                            out.print(responseString);
+                            out.flush();
+                            // Small delay to ensure complete transmission
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Error sending response: " + e.getMessage());
+                        }
+                        // Close the connection to signal completion
+                        socket.close();
+                        return; // Exit early
+                    } else {
+                        System.out.println("Sending download error response");
+                        out.println(responseJson.toString());
+                    }
+                    return; // Exit early for downloadMusic
+                }
+                case "likeSong" -> responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
+                case "dislikeSong" -> responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
+                case "getUserPlaylists" ->
+                        responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
+                default -> {
                     responseJson = new JsonObject();
                     responseJson.addProperty("status", Response.InvalidRequest.toString());
                     responseJson.addProperty("message", "Unknown request type");
-                    break;
+                }
             }
 
             // Send response back to the client
@@ -107,10 +121,10 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleSignUp(JsonObject payload) {
         JsonObject response = new JsonObject();
-        java.lang.String fullname = payload.get("fullname").getAsString();
-        java.lang.String username = payload.get("username").getAsString();
-        java.lang.String email = payload.get("email").getAsString();
-        java.lang.String password = payload.get("password").getAsString();
+        String fullname = payload.get("fullname").getAsString();
+        String username = payload.get("username").getAsString();
+        String email = payload.get("email").getAsString();
+        String password = payload.get("password").getAsString();
 
         boolean emailExist = userRepository.getAllUser().stream()
                 .anyMatch(user -> user.getEmail().equals(email));
@@ -128,7 +142,7 @@ public class ClientHandler extends Thread {
             return response;
         }
 
-        java.lang.String hashedPassword = PasswordUtils.hashPassword(password);
+        String hashedPassword = PasswordUtils.hashPassword(password);
         User user = new User(username, email, fullname, hashedPassword, LocalDateTime.now(), 0);
         Response responseMessage = userRepository.addUser(user);
         response.addProperty("status", responseMessage.toString());
@@ -137,8 +151,8 @@ public class ClientHandler extends Thread {
     }
 
     private JsonObject handleLogIn(JsonObject payload) {
-        java.lang.String username = payload.get("username").getAsString();
-        java.lang.String password = payload.get("password").getAsString();
+        String username = payload.get("username").getAsString();
+        String password = payload.get("password").getAsString();
 
         System.out.println("Username received: " + username);
         System.out.println("Password received: " + password);
@@ -214,12 +228,12 @@ public class ClientHandler extends Thread {
             // Save music to database
             Response responseMessage = musicRepository.addMusic(music);
             if (responseMessage == Response.uploadMusicSuccess) {
-                response.addProperty("status",responseMessage.toString());
+                response.addProperty("status", responseMessage.toString());
                 response.addProperty("message", "Music uploaded successfully");
-            } else if(newSongForUser){
+            } else if (newSongForUser) {
                 response.addProperty("status", Response.addMusicSuccess.toString());
                 response.addProperty("message", "Music added to user : " + user.getUsername());
-            }else {
+            } else {
                 response.addProperty("status", responseMessage.toString());
                 response.addProperty("message", "Music already exists in the user music List");
             }
