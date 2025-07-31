@@ -33,6 +33,8 @@ public enum Response{
     NotLiked,
     getUserPlaylistsSuccess,
     getUserPlaylistsFailed,
+    getUserLikedSongsSuccess,
+    getUserLikedSongsFailed,
     musicAlreadyExists,
 }
 

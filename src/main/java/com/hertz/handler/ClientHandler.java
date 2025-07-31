@@ -109,6 +109,9 @@ public class ClientHandler extends Thread {
                 case "getUserPlaylists":
                     responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
                     break;
+                case "getUserLikedSongs":
+                    responseJson = handleGetUserLikedSongs(requestJson.getAsJsonObject("Payload"));
+                    break;
                 default:
                     responseJson = new JsonObject();
                     responseJson.addProperty("status", Response.InvalidRequest.toString());
@@ -549,6 +552,35 @@ public class ClientHandler extends Thread {
         } catch (Exception e) {
             response.addProperty("status", Response.getUserPlaylistsFailed.toString());
             response.addProperty("message", "Failed to retrieve playlists: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    private JsonObject handleGetUserLikedSongs(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        String username = payload.get("username").getAsString();
+
+        UserRepository userRepository = UserRepository.getInstance();
+
+        User user = userRepository.getAllUser().stream()
+                .filter(u -> u.getUsername().equals(username))
+                .findFirst()
+                .orElse(null);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        try {
+            List<Integer> likedSongIds = user.getLikedSongs();
+            response.addProperty("status", Response.getUserLikedSongsSuccess.toString());
+            response.add("Payload", gson.toJsonTree(likedSongIds));
+        } catch (Exception e) {
+            response.addProperty("status", Response.getUserLikedSongsFailed.toString());
+            response.addProperty("message", "Failed to retrieve liked songs: " + e.getMessage());
         }
 
         return response;
