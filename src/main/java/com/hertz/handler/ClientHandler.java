@@ -209,13 +209,20 @@ public class ClientHandler extends Thread {
             String extension = musicMap.get("extension").getAsString();
             Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64Data);
             // Add music to user's tracks
-            user.addTrack(id);
+            boolean newSongForUser = user.addTrack(id);
             userRepository.updateUser(user);
             // Save music to database
             Response responseMessage = musicRepository.addMusic(music);
-
-            response.addProperty("status", responseMessage.toString());
-            response.addProperty("message", responseMessage.toString());
+            if (responseMessage == Response.uploadMusicSuccess) {
+                response.addProperty("status",responseMessage.toString());
+                response.addProperty("message", "Music uploaded successfully");
+            } else if(newSongForUser){
+                response.addProperty("status", Response.addMusicSuccess.toString());
+                response.addProperty("message", "Music added to user : " + user.getUsername());
+            }else {
+                response.addProperty("status", responseMessage.toString());
+                response.addProperty("message", "Music already exists in the user music List");
+            }
         } catch (Exception e) {
             response.addProperty("status", Response.uploadMusicFailed.toString());
             response.addProperty("message", "Failed to upload music: " + e.getMessage());

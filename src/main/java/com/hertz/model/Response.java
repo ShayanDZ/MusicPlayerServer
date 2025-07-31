@@ -36,6 +36,8 @@ public enum Response{
     resetCodeSent,
     resetCodeFailed,
     resetCodeVerified,
-    resetCodeInvalid
+    resetCodeInvalid,
+    addMusicSuccess,
+    addMusicFailed,
 }
 
