@@ -7,7 +7,6 @@ import java.net.*;
 
 public class ServerApplication {
     private static final int PORT = 12345;
-
     public static void main(String[] args) {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server listening on port " + PORT);

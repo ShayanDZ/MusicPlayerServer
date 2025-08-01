@@ -40,16 +40,16 @@ public class MusicRepository {
                 });
 
     }
-    public static MusicRepository getInstance() {
+    public synchronized static MusicRepository getInstance() {
         if (instance == null) {
             instance = new MusicRepository();
         }
         return instance;
     }
-    public List<Music> getAllMusic() {
+    public synchronized List<Music> getAllMusic() {
         return musicList;
     }
-    public Response addMusic(Music music) {
+    public synchronized Response addMusic(Music music) {
         if (musicList.contains(music)) {
             return Response.musicAlreadyExists;
         }
@@ -70,7 +70,7 @@ public class MusicRepository {
         databaseConnection.getDatabase().getCollection("musics").insertOne(musicDocument);
         return Response.uploadMusicSuccess;
     }
-    public boolean updateMusic(Music music) {
+    public synchronized boolean updateMusic(Music music) {
         try {
             DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
             Document updatedMusicDocument = new Document("id", music.getId())
@@ -93,5 +93,13 @@ public class MusicRepository {
             e.printStackTrace();
             return false;
         }
+    }
+    public synchronized Music findMusicById(int id) {
+        for (Music music : musicList) {
+            if (music.getId() == id) {
+                return music;
+            }
+        }
+        return null; // Return null if no music with the given ID is found
     }
 }

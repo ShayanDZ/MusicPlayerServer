@@ -59,7 +59,7 @@ public class UserRepository {
         }
         return instance;
     }
-    public Response addUser(User user) {
+    public synchronized Response addUser(User user) {
         if (userList.contains(user)) {
             return Response.USER_ALREADY_EXIST;
         }
@@ -78,11 +78,11 @@ public class UserRepository {
         databaseConnection.getDatabase().getCollection("users").insertOne(userDocument);
         return Response.signUpSuccess;
     }
-    public List<User> getAllUser() {
+    public synchronized List<User> getAllUser() {
         return userList;
     }
 
-    public boolean updateUser(User user) {
+    public synchronized boolean updateUser(User user) {
         try {
             DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
             Document updatedUserDocument = new Document("username", user.getUsername())
@@ -105,5 +105,22 @@ public class UserRepository {
             e.printStackTrace();
             return false;
         }
+    }
+    public synchronized User findByUsername(String username) {
+        for (User user : userList) {
+            if (user.getUsername().equals(username)) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    public synchronized User findByEmail(String email) {
+        for (User user : userList) {
+            if (user.getEmail().equals(email)) {
+                return user;
+            }
+        }
+        return null;
     }
 }

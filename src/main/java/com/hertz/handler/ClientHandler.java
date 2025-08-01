@@ -5,11 +5,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.hertz.model.*;
 import com.hertz.repository.MusicRepository;
+import com.hertz.repository.ResetCodeRepository;
 import com.hertz.repository.UserRepository;
 import com.hertz.utils.DatabaseConnection;
 import com.hertz.utils.DateParser;
+import com.hertz.utils.EmailUtils;
 import com.hertz.utils.PasswordUtils;
-import org.bson.Document;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,7 +18,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +25,8 @@ import static com.hertz.utils.PasswordUtils.verifyPassword;
 
 public class ClientHandler extends Thread {
     private static final Gson gson = new Gson();
+    private static final UserRepository userRepository = UserRepository.getInstance();
+    private static final MusicRepository musicRepository = MusicRepository.getInstance();
     private Socket socket;
 
     public ClientHandler(Socket socket) {
@@ -36,7 +38,7 @@ public class ClientHandler extends Thread {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
             StringBuilder requestBuilder = new StringBuilder();
-            java.lang.String inputLine;
+            String inputLine;
 
             // Read the request from the client
             while ((inputLine = in.readLine()) != null) {
@@ -46,39 +48,31 @@ public class ClientHandler extends Thread {
                 }
             }
 
-            java.lang.String requestString = requestBuilder.toString();
+            String requestString = requestBuilder.toString();
             System.out.println("Request received: " + requestString);
 
             // Parse the JSON request using GSON
             JsonObject requestJson = gson.fromJson(requestString, JsonObject.class);
-            java.lang.String action = requestJson.get("Request").getAsString();
+            String action = requestJson.get("Request").getAsString();
 
             JsonObject responseJson;
 
             switch (action) {
-                case "signUp":
-                    responseJson = handleSignUp(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "logIn":
-                    responseJson = handleLogIn(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "uploadMusic":
-                    responseJson = handleUploadMusic(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "getUserMusicList":
-                    responseJson = handleGetUserMusicList(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "deleteMusic":
-                    responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "downloadMusic":
+                case "signUp" -> responseJson = handleSignUp(requestJson.getAsJsonObject("Payload"));
+                case "logIn" -> responseJson = handleLogIn(requestJson.getAsJsonObject("Payload"));
+                case "uploadMusic" -> responseJson = handleUploadMusic(requestJson.getAsJsonObject("Payload"));
+                case "getUserMusicList" ->
+                        responseJson = handleGetUserMusicList(requestJson.getAsJsonObject("Payload"));
+                case "deleteMusic" -> responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
+                case "downloadMusic" -> {
+                    responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
                     responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
                     // For downloadMusic, send response and close connection to signal completion
-                    if (responseJson.has("status") && 
-                        responseJson.get("status").getAsString().equals(Response.downloadMusicSuccess.toString())) {
+                    if (responseJson.has("status") &&
+                            responseJson.get("status").getAsString().equals(Response.downloadMusicSuccess.toString())) {
                         String responseString = responseJson.toString();
                         System.out.println("Sending download response: " + responseString.length() + " characters");
-                        
+
                         // Send the response using PrintWriter to ensure proper JSON transmission
                         try {
                             out.print(responseString);
@@ -100,23 +94,16 @@ public class ClientHandler extends Thread {
                         out.println(responseJson.toString());
                     }
                     return; // Exit early for downloadMusic
-                case "likeSong":
-                    responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "dislikeSong":
-                    responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "getUserPlaylists":
-                    responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
-                    break;
-                case "getUserLikedSongs":
-                    responseJson = handleGetUserLikedSongs(requestJson.getAsJsonObject("Payload"));
-                    break;
-                default:
+                }
+                case "likeSong" -> responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
+                case "dislikeSong" -> responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
+                case "getUserPlaylists" ->
+                        responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
+                default -> {
                     responseJson = new JsonObject();
                     responseJson.addProperty("status", Response.InvalidRequest.toString());
                     responseJson.addProperty("message", "Unknown request type");
-                    break;
+                }
             }
 
             // Send response back to the client
@@ -134,11 +121,10 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleSignUp(JsonObject payload) {
         JsonObject response = new JsonObject();
-        java.lang.String fullname = payload.get("fullname").getAsString();
-        java.lang.String username = payload.get("username").getAsString();
-        java.lang.String email = payload.get("email").getAsString();
-        java.lang.String password = payload.get("password").getAsString();
-        UserRepository userRepository = UserRepository.getInstance();
+        String fullname = payload.get("fullname").getAsString();
+        String username = payload.get("username").getAsString();
+        String email = payload.get("email").getAsString();
+        String password = payload.get("password").getAsString();
 
         boolean emailExist = userRepository.getAllUser().stream()
                 .anyMatch(user -> user.getEmail().equals(email));
@@ -156,7 +142,7 @@ public class ClientHandler extends Thread {
             return response;
         }
 
-        java.lang.String hashedPassword = PasswordUtils.hashPassword(password);
+        String hashedPassword = PasswordUtils.hashPassword(password);
         User user = new User(username, email, fullname, hashedPassword, LocalDateTime.now(), 0);
         Response responseMessage = userRepository.addUser(user);
         response.addProperty("status", responseMessage.toString());
@@ -165,16 +151,13 @@ public class ClientHandler extends Thread {
     }
 
     private JsonObject handleLogIn(JsonObject payload) {
-        java.lang.String username = payload.get("username").getAsString();
-        java.lang.String password = payload.get("password").getAsString();
+        String username = payload.get("username").getAsString();
+        String password = payload.get("password").getAsString();
 
         System.out.println("Username received: " + username);
         System.out.println("Password received: " + password);
 
-        User temp = UserRepository.getInstance().getAllUser().stream()
-                .filter(user -> user.getUsername().equals(username))
-                .findAny()
-                .orElse(null);
+        User temp = userRepository.findByUsername(username);
 
         if (temp != null) {
             System.out.println("User found: " + temp.getUsername());
@@ -209,11 +192,7 @@ public class ClientHandler extends Thread {
         JsonObject musicMap = payload.getAsJsonObject("musicMap");
         String base64Data = payload.get("base64Data").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -244,13 +223,20 @@ public class ClientHandler extends Thread {
             String extension = musicMap.get("extension").getAsString();
             Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64Data);
             // Add music to user's tracks
-            user.addTrack(id);
+            boolean newSongForUser = user.addTrack(id);
             userRepository.updateUser(user);
             // Save music to database
-            Response responseMessage = MusicRepository.getInstance().addMusic(music);
-
-            response.addProperty("status", responseMessage.toString());
-            response.addProperty("message", responseMessage.toString());
+            Response responseMessage = musicRepository.addMusic(music);
+            if (responseMessage == Response.uploadMusicSuccess) {
+                response.addProperty("status", responseMessage.toString());
+                response.addProperty("message", "Music uploaded successfully");
+            } else if (newSongForUser) {
+                response.addProperty("status", Response.addMusicSuccess.toString());
+                response.addProperty("message", "Music added to user : " + user.getUsername());
+            } else {
+                response.addProperty("status", responseMessage.toString());
+                response.addProperty("message", "Music already exists in the user music List");
+            }
         } catch (Exception e) {
             response.addProperty("status", Response.uploadMusicFailed.toString());
             response.addProperty("message", "Failed to upload music: " + e.getMessage());
@@ -263,11 +249,7 @@ public class ClientHandler extends Thread {
         JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -278,7 +260,6 @@ public class ClientHandler extends Thread {
         try {
             List<Integer> userMusicListIDs = user.getTracks();
             List<JsonObject> musicJsonList = new ArrayList<>();
-            MusicRepository musicRepository = MusicRepository.getInstance();
             List<Music> userMusicList = musicRepository.getAllMusic().stream()
                     .filter(music -> userMusicListIDs.contains(music.getId()))
                     .toList();
@@ -313,13 +294,8 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        MusicRepository musicRepository = MusicRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -362,13 +338,8 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        MusicRepository musicRepository = MusicRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -390,17 +361,13 @@ public class ClientHandler extends Thread {
         try {
             String base64Data = music.getBase64();
             if (base64Data != null && !base64Data.isEmpty()) {
-                System.out.println("Sending music download for user: " + username + ", music: " + music.getTitle());
-                System.out.println("Base64 data length: " + base64Data.length());
                 response.addProperty("status", Response.downloadMusicSuccess.toString());
                 response.addProperty("Payload", base64Data);
             } else {
-                System.out.println("No base64 data available for music: " + music.getTitle());
                 response.addProperty("status", Response.dataNotFound.toString());
                 response.addProperty("message", "Base64 data not available for the requested music");
             }
         } catch (Exception e) {
-            System.out.println("Error during music download: " + e.getMessage());
             response.addProperty("status", Response.downloadMusicFailed.toString());
             response.addProperty("message", "Failed to retrieve music: " + e.getMessage());
         }
@@ -413,13 +380,8 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        MusicRepository musicRepository = MusicRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -466,13 +428,8 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        UserRepository userRepository = UserRepository.getInstance();
-        MusicRepository musicRepository = MusicRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -480,10 +437,7 @@ public class ClientHandler extends Thread {
             return response;
         }
 
-        Music music = musicRepository.getAllMusic().stream()
-                .filter(m -> m.getId() == musicId)
-                .findFirst()
-                .orElse(null);
+        Music music = musicRepository.findMusicById(musicId);
 
         if (music == null) {
             response.addProperty("status", Response.musicNotFound.toString());
@@ -520,12 +474,7 @@ public class ClientHandler extends Thread {
         JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
-
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -557,16 +506,13 @@ public class ClientHandler extends Thread {
         return response;
     }
 
-    private JsonObject handleGetUserLikedSongs(JsonObject payload) {
+    private JsonObject handleUpdateProfile(JsonObject payload) {
         JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
 
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        // Find the user by username
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
@@ -575,14 +521,125 @@ public class ClientHandler extends Thread {
         }
 
         try {
-            List<Integer> likedSongIds = user.getLikedSongs();
-            response.addProperty("status", Response.getUserLikedSongsSuccess.toString());
-            response.add("Payload", gson.toJsonTree(likedSongIds));
+            if (payload.has("fullName")) {
+                user.setFullName(payload.get("fullName").getAsString());
+            }
+            if (payload.has("email")) {
+                user.setEmail(payload.get("email").getAsString());
+            }
+
+            // Update the user in the repository
+            boolean updateSuccess = userRepository.updateUser(user);
+
+            if (updateSuccess) {
+                response.addProperty("status", Response.profileUpdateSuccess.toString());
+                response.addProperty("message", "Profile updated successfully");
+            } else {
+                response.addProperty("status", Response.profileUpdateFailed.toString());
+                response.addProperty("message", "Failed to update profile");
+            }
         } catch (Exception e) {
-            response.addProperty("status", Response.getUserLikedSongsFailed.toString());
-            response.addProperty("message", "Failed to retrieve liked songs: " + e.getMessage());
+            response.addProperty("status", Response.profileUpdateFailed.toString());
+            response.addProperty("message", "Error updating profile: " + e.getMessage());
         }
 
+        return response;
+    }
+
+    private JsonObject handleUpdatePassword(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        String username = payload.get("username").getAsString();
+        boolean isForgotten = payload.has("isForgotten") && payload.get("isForgotten").getAsBoolean();
+        String oldPassword = payload.get("oldPassword").getAsString();
+        String newPassword = payload.get("newPassword").getAsString();
+
+        // Find the user by username
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found");
+            return response;
+        }
+
+        // Verify old password
+        if (!isForgotten) {
+            if (!PasswordUtils.verifyPassword(user.getHashedPassword(), oldPassword)) {
+                response.addProperty("status", Response.incorrectPassword.toString());
+                response.addProperty("message", "Old password is incorrect");
+                return response;
+            }
+        }
+
+        try {
+            // Hash and update the new password
+            String hashedPassword = PasswordUtils.hashPassword(newPassword);
+            user.setHashedPassword(hashedPassword);
+
+            // Update the user in the repository
+            boolean updateSuccess = userRepository.updateUser(user);
+
+            if (updateSuccess) {
+                response.addProperty("status", Response.passwordUpdateSuccess.toString());
+                response.addProperty("message", "Password changed successfully");
+            } else {
+                response.addProperty("status", Response.passwordUpdateFailed.toString());
+                response.addProperty("message", "Failed to change password");
+            }
+        } catch (Exception e) {
+            response.addProperty("status", Response.passwordUpdateFailed.toString());
+            response.addProperty("message", "Error changing password: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    private JsonObject handleForgetPasswordRequest(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        String email = payload.get("email").getAsString();
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            response.addProperty("status", Response.userNotFound.toString());
+            response.addProperty("message", "User not found with the provided email");
+            return response;
+        }
+        ForgotPasswordHandler forgotPasswordHandler = new ForgotPasswordHandler(userRepository, ResetCodeRepository.getInstance());
+        try {
+            String result = forgotPasswordHandler.forgotPassword(email);
+            response.addProperty("status", Response.resetCodeSent.toString());
+            response.addProperty("message", result);
+        } catch (IllegalArgumentException e) {
+            response.addProperty("status", Response.resetCodeFailed.toString());
+            response.addProperty("message", e.getMessage());
+        } catch (Exception e) {
+            response.addProperty("status", Response.resetCodeFailed.toString());
+            response.addProperty("message", "An error occurred while processing the request: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private JsonObject handleVerifyResetCode(JsonObject payload) {
+        JsonObject response = new JsonObject();
+        String email = payload.get("email").getAsString();
+        String code = payload.get("code").getAsString();
+
+        ForgotPasswordHandler forgotPasswordHandler = new ForgotPasswordHandler(userRepository, ResetCodeRepository.getInstance());
+        try {
+            boolean isValid = forgotPasswordHandler.verifyCode(email, code);
+            if (isValid) {
+                response.addProperty("status", Response.resetCodeVerified.toString());
+                response.addProperty("message", "Reset code verified successfully");
+            } else {
+                response.addProperty("status", Response.resetCodeInvalid.toString());
+                response.addProperty("message", "Invalid or expired reset code");
+            }
+        } catch (IllegalArgumentException e) {
+            response.addProperty("status", Response.resetCodeInvalid.toString());
+            response.addProperty("message", e.getMessage());
+        } catch (Exception e) {
+            response.addProperty("status", Response.resetCodeFailed.toString());
+            response.addProperty("message", "An error occurred while verifying the reset code: " + e.getMessage());
+        }
         return response;
     }
 }
