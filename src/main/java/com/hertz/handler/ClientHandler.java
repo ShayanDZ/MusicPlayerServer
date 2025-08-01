@@ -27,7 +27,7 @@ public class ClientHandler extends Thread {
     private static final Gson gson = new Gson();
     private static final UserRepository userRepository = UserRepository.getInstance();
     private static final MusicRepository musicRepository = MusicRepository.getInstance();
-    private Socket socket;
+    private final Socket socket;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -66,7 +66,6 @@ public class ClientHandler extends Thread {
                 case "deleteMusic" -> responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
                 case "downloadMusic" -> {
                     responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
-                    responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
                     // For downloadMusic, send response and close connection to signal completion
                     if (responseJson.has("status") &&
                             responseJson.get("status").getAsString().equals(Response.downloadMusicSuccess.toString())) {
@@ -97,11 +96,8 @@ public class ClientHandler extends Thread {
                 }
                 case "likeSong" -> responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
                 case "dislikeSong" -> responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
-                case "getUserPlaylists" ->
-                        responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
-                /// new
-                case "getUserLikedSongs" ->
-                        responseJson = handleGetUserLikedSongs(requestJson.getAsJsonObject("Payload"));
+                case "getUserPlaylists" -> responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
+                case "getUserLikedSongs" -> responseJson = handleGetUserLikedSongs(requestJson.getAsJsonObject("Payload"));
                 default -> {
                     responseJson = new JsonObject();
                     responseJson.addProperty("status", Response.InvalidRequest.toString());
@@ -553,12 +549,7 @@ public class ClientHandler extends Thread {
         JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
-        UserRepository userRepository = UserRepository.getInstance();
-
-        User user = userRepository.getAllUser().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst()
-                .orElse(null);
+        User user = userRepository.findByUsername(username);
 
         if (user == null) {
             response.addProperty("status", Response.userNotFound.toString());
