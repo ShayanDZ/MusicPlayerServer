@@ -7,8 +7,8 @@ public enum Response{
     logInSuccess,
     userNotFound,
     incorrectPassword,
-    profileUpdateSuccess,
-    profileUpdateFailed,
+    userInfoUpdateSuccess,
+    userInfoUpdateFailed,
     passwordUpdateSuccess,
     passwordUpdateFailed,
     InvalidRequest,
@@ -41,5 +41,6 @@ public enum Response{
     resetCodeInvalid,
     addMusicSuccess,
     addMusicFailed,
+    noLikedSongs,
 }
 

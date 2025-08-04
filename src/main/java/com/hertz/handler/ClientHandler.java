@@ -7,10 +7,9 @@ import com.hertz.model.*;
 import com.hertz.repository.MusicRepository;
 import com.hertz.repository.ResetCodeRepository;
 import com.hertz.repository.UserRepository;
-import com.hertz.utils.DatabaseConnection;
 import com.hertz.utils.DateParser;
-import com.hertz.utils.EmailUtils;
 import com.hertz.utils.PasswordUtils;
+import com.hertz.utils.ResponseUtils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,6 +27,7 @@ public class ClientHandler extends Thread {
     private static final UserRepository userRepository = UserRepository.getInstance();
     private static final MusicRepository musicRepository = MusicRepository.getInstance();
     private final Socket socket;
+    private JsonObject response;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -96,13 +96,17 @@ public class ClientHandler extends Thread {
                 }
                 case "likeSong" -> responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
                 case "dislikeSong" -> responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
-                case "getUserPlaylists" -> responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
-                case "getUserLikedSongs" -> responseJson = handleGetUserLikedSongs(requestJson.getAsJsonObject("Payload"));
-                default -> {
-                    responseJson = new JsonObject();
-                    responseJson.addProperty("status", Response.InvalidRequest.toString());
-                    responseJson.addProperty("message", "Unknown request type");
-                }
+                case "getUserPlaylists" ->
+                        responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
+                case "getUserLikedSongs" ->
+                        responseJson = handleGetUserLikedSongs(requestJson.getAsJsonObject("Payload"));
+                case "verifyResetCode" -> responseJson = handleVerifyResetCode(requestJson.getAsJsonObject("Payload"));
+                case "forgetPasswordRequest" ->
+                        responseJson = handleForgetPasswordRequest(requestJson.getAsJsonObject("Payload"));
+                case "updatePassword" -> responseJson = handleUpdatePassword(requestJson.getAsJsonObject("Payload"));
+                default ->
+                        responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
+
             }
 
             // Send response back to the client
@@ -119,7 +123,6 @@ public class ClientHandler extends Thread {
     }
 
     private JsonObject handleSignUp(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String fullname = payload.get("fullname").getAsString();
         String username = payload.get("username").getAsString();
         String email = payload.get("email").getAsString();
@@ -131,21 +134,18 @@ public class ClientHandler extends Thread {
                 .anyMatch(user -> user.getUsername().equals(username));
 
         if (emailExist) {
-            response.addProperty("status", Response.emailAlreadyExist.toString());
-            response.addProperty("message", "Email already exists");
+            response = ResponseUtils.createResponse(Response.emailAlreadyExist.toString(), "Email already exists");
             return response;
         }
         if (usernameExist) {
-            response.addProperty("status", Response.usernameAlreadyExist.toString());
-            response.addProperty("message", "Username already exists");
+            response = ResponseUtils.createResponse(Response.usernameAlreadyExist.toString(), "Username already exists");
             return response;
         }
 
         String hashedPassword = PasswordUtils.hashPassword(password);
         User user = new User(username, email, fullname, hashedPassword, LocalDateTime.now(), 0);
         Response responseMessage = userRepository.addUser(user);
-        response.addProperty("status", responseMessage.toString());
-        response.addProperty("message", responseMessage.toString());
+        response = ResponseUtils.createResponse(responseMessage.toString(), responseMessage.toString());
         return response;
     }
 
@@ -164,29 +164,24 @@ public class ClientHandler extends Thread {
             System.out.println("User not found in repository.");
         }
 
-        JsonObject response = new JsonObject();
         if (temp != null) {
             if (verifyPassword(temp.getHashedPassword(), password)) {
-                response.addProperty("status", Response.logInSuccess.toString());
-                response.addProperty("message", "User logged in successfully");
+                response = ResponseUtils.createResponse(Response.logInSuccess.toString(), "User logged in successfully");
                 response.addProperty("username", temp.getUsername());
                 response.addProperty("email", temp.getEmail());
                 response.addProperty("fullname", temp.getFullName());
                 response.addProperty("registrationDate", temp.getRegistrationDate().toString());
                 response.addProperty("profileImageUrl", temp.getProfileImageUrl() != null ? temp.getProfileImageUrl() : "");
             } else {
-                response.addProperty("status", Response.incorrectPassword.toString());
-                response.addProperty("message", "Password is Incorrect");
+                response = ResponseUtils.createResponse(Response.incorrectPassword.toString(), "Password is Incorrect");
             }
         } else {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "Invalid username");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "Invalid username");
         }
         return response;
     }
 
     private JsonObject handleUploadMusic(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
         JsonObject musicMap = payload.getAsJsonObject("musicMap");
         String base64Data = payload.get("base64Data").getAsString();
@@ -194,8 +189,7 @@ public class ClientHandler extends Thread {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
@@ -227,32 +221,26 @@ public class ClientHandler extends Thread {
             // Save music to database
             Response responseMessage = musicRepository.addMusic(music);
             if (responseMessage == Response.uploadMusicSuccess) {
-                response.addProperty("status", responseMessage.toString());
-                response.addProperty("message", "Music uploaded successfully");
+                response = ResponseUtils.createResponse(Response.uploadMusicSuccess.toString(), "Music uploaded successfully");
             } else if (newSongForUser) {
-                response.addProperty("status", Response.addMusicSuccess.toString());
-                response.addProperty("message", "Music added to user : " + user.getUsername());
+                response = ResponseUtils.createResponse(Response.addMusicSuccess.toString(), "Music added to user : " + user.getUsername());
             } else {
-                response.addProperty("status", responseMessage.toString());
-                response.addProperty("message", "Music already exists in the user music List");
+                response = ResponseUtils.createResponse(responseMessage.toString(), "Music already exists in the user music List");
             }
         } catch (Exception e) {
-            response.addProperty("status", Response.uploadMusicFailed.toString());
-            response.addProperty("message", "Failed to upload music: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.uploadMusicFailed.toString(), "Failed to upload music: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleGetUserMusicList(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
@@ -277,19 +265,16 @@ public class ClientHandler extends Thread {
                 musicJson.addProperty("isLiked", isLiked);
                 musicJsonList.add(musicJson);
             }
-
-            response.addProperty("status", Response.getUserMusicListSuccess.toString());
+            response = ResponseUtils.createResponse(Response.getUserMusicListSuccess.toString(), "Music list retrieved successfully");
             response.add("Payload", gson.toJsonTree(musicJsonList));
         } catch (Exception e) {
-            response.addProperty("status", Response.getUserMusicListFailed.toString());
-            response.addProperty("message", "Failed to retrieve music list: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.getUserMusicListFailed.toString(), "Failed to retrieve music list: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleDeleteMusic(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
@@ -297,19 +282,14 @@ public class ClientHandler extends Thread {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
-        Music music = musicRepository.getAllMusic().stream()
-                .filter(m -> m.getId() == musicId)
-                .findFirst()
-                .orElse(null);
+        Music music = musicRepository.findMusicById(musicId);
 
         if (music == null) {
-            response.addProperty("status", Response.musicNotFound.toString());
-            response.addProperty("message", "Music not found");
+            response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
             return response;
         }
 
@@ -318,22 +298,18 @@ public class ClientHandler extends Thread {
             boolean removed = user.removeTrack(musicId);
 
             if (removed) {
-                response.addProperty("status", Response.deleteMusicSuccess.toString());
-                response.addProperty("message", "Music removed from user's tracks successfully");
+                response = ResponseUtils.createResponse(Response.deleteMusicSuccess.toString(), "Music removed from user's tracks successfully");
             } else {
-                response.addProperty("status", Response.musicNotFoundForUser.toString());
-                response.addProperty("message", "Music not found in user's tracks");
+                response = ResponseUtils.createResponse(Response.musicNotFoundForUser.toString(), "Music not found in user's tracks");
             }
         } catch (Exception e) {
-            response.addProperty("status", Response.deleteMusicFailed.toString());
-            response.addProperty("message", "Failed to remove music: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.deleteMusicFailed.toString(), "Failed to remove music: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleDownloadMusic(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
@@ -341,41 +317,33 @@ public class ClientHandler extends Thread {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
-        Music music = musicRepository.getAllMusic().stream()
-                .filter(m -> m.getId() == musicId)
-                .findFirst()
-                .orElse(null);
+        Music music = musicRepository.findMusicById(musicId);
 
         if (music == null) {
-            response.addProperty("status", Response.musicNotFound.toString());
-            response.addProperty("message", "Music not found");
+            response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
             return response;
         }
 
         try {
             String base64Data = music.getBase64();
             if (base64Data != null && !base64Data.isEmpty()) {
-                response.addProperty("status", Response.downloadMusicSuccess.toString());
+                response = ResponseUtils.createResponse(Response.downloadMusicSuccess.toString(), "Music downloaded successfully");
                 response.addProperty("Payload", base64Data);
             } else {
-                response.addProperty("status", Response.dataNotFound.toString());
-                response.addProperty("message", "Base64 data not available for the requested music");
+                response = ResponseUtils.createResponse(Response.dataNotFound.toString(), "Base64 data not available for the requested music");
             }
         } catch (Exception e) {
-            response.addProperty("status", Response.downloadMusicFailed.toString());
-            response.addProperty("message", "Failed to retrieve music: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.downloadMusicFailed.toString(), "Failed to retrieve music: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleLikeSong(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
@@ -383,26 +351,20 @@ public class ClientHandler extends Thread {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
-        Music music = musicRepository.getAllMusic().stream()
-                .filter(m -> m.getId() == musicId)
-                .findFirst()
-                .orElse(null);
+        Music music = musicRepository.findMusicById(musicId);
 
         if (music == null) {
-            response.addProperty("status", Response.musicNotFound.toString());
-            response.addProperty("message", "Music not found");
+            response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
             return response;
         }
 
         try {
             if (user.getLikedSongs().contains(music.getId())) {
-                response.addProperty("status", Response.alreadyLiked.toString());
-                response.addProperty("message", "Song is already liked by the user");
+                response = ResponseUtils.createResponse(Response.alreadyLiked.toString(), "Song is already liked by the user");
             } else {
                 user.getLikedSongs().add(music.getId());
                 music.setLikeCount(music.getLikeCount() + 1);
@@ -411,19 +373,16 @@ public class ClientHandler extends Thread {
                 musicRepository.updateMusic(music);
 
                 userRepository.updateUser(user); // Ensure user is updated in the repository
-                response.addProperty("status", Response.likeSuccess.toString());
-                response.addProperty("message", "Song liked successfully");
+                response = ResponseUtils.createResponse(Response.likeSuccess.toString(), "Song liked successfully");
             }
         } catch (Exception e) {
-            response.addProperty("status", Response.likeFailed.toString());
-            response.addProperty("message", "Failed to like song: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.likeFailed.toString(), "Failed to like song: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleDislikeSong(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
@@ -431,23 +390,20 @@ public class ClientHandler extends Thread {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
         Music music = musicRepository.findMusicById(musicId);
 
         if (music == null) {
-            response.addProperty("status", Response.musicNotFound.toString());
-            response.addProperty("message", "Music not found");
+            response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
             return response;
         }
 
         try {
             if (!user.getLikedSongs().contains(music.getId())) {
-                response.addProperty("status", Response.NotLiked.toString());
-                response.addProperty("message", "Song is not liked by the user");
+                response = ResponseUtils.createResponse(Response.NotLiked.toString(), "Song is not liked by the user");
             } else {
                 user.getLikedSongs().remove(Integer.valueOf(music.getId()));
                 // Ensure like count doesn't go negative
@@ -458,26 +414,22 @@ public class ClientHandler extends Thread {
                 musicRepository.updateMusic(music);
                 userRepository.updateUser(user);
 
-                response.addProperty("status", Response.dislikeSuccess.toString());
-                response.addProperty("message", "Song disliked successfully");
+                response = ResponseUtils.createResponse(Response.dislikeSuccess.toString(), "Song disliked successfully");
             }
         } catch (Exception e) {
-            response.addProperty("status", Response.dislikeFailed.toString());
-            response.addProperty("message", "Failed to dislike song: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.dislikeFailed.toString(), "Failed to dislike song: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleGetUserPlaylists(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
@@ -494,19 +446,16 @@ public class ClientHandler extends Thread {
                 playlistJson.addProperty("ownerId", playlist.getOwnerID());
                 playlistJsonList.add(playlistJson);
             }
-
-            response.addProperty("status", Response.getUserPlaylistsSuccess.toString());
+            response = ResponseUtils.createResponse(Response.getUserPlaylistsSuccess.toString(), "Playlists retrieved successfully");
             response.add("Payload", gson.toJsonTree(playlistJsonList));
         } catch (Exception e) {
-            response.addProperty("status", Response.getUserPlaylistsFailed.toString());
-            response.addProperty("message", "Failed to retrieve playlists: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.getUserPlaylistsFailed.toString(), "Failed to retrieve playlists: " + e.getMessage());
         }
 
         return response;
     }
 
-    private JsonObject handleUpdateProfile(JsonObject payload) {
-        JsonObject response = new JsonObject();
+    private JsonObject handleUpdateUserInfo(JsonObject payload) {
         String username = payload.get("username").getAsString();
 
 
@@ -514,8 +463,7 @@ public class ClientHandler extends Thread {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
@@ -531,46 +479,43 @@ public class ClientHandler extends Thread {
             boolean updateSuccess = userRepository.updateUser(user);
 
             if (updateSuccess) {
-                response.addProperty("status", Response.profileUpdateSuccess.toString());
-                response.addProperty("message", "Profile updated successfully");
+                response = ResponseUtils.createResponse(Response.userInfoUpdateSuccess.toString(), "UserInfo updated successfully");
             } else {
-                response.addProperty("status", Response.profileUpdateFailed.toString());
-                response.addProperty("message", "Failed to update profile");
+                response = ResponseUtils.createResponse(Response.userInfoUpdateFailed.toString(), "Failed to update UserInfo");
             }
         } catch (Exception e) {
-            response.addProperty("status", Response.profileUpdateFailed.toString());
-            response.addProperty("message", "Error updating profile: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.userInfoUpdateFailed.toString(), "Error updating UserInfo: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleGetUserLikedSongs(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
 
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
         try {
             List<Integer> likedSongIds = user.getLikedSongs();
-            response.addProperty("status", Response.getUserLikedSongsSuccess.toString());
+            if (likedSongIds.isEmpty()) {
+                response = ResponseUtils.createResponse(Response.noLikedSongs.toString(), "No liked songs found for the user");
+                return response;
+            }
+            response = ResponseUtils.createResponse(Response.getUserLikedSongsSuccess.toString(), "Liked songs retrieved successfully");
             response.add("Payload", gson.toJsonTree(likedSongIds));
         } catch (Exception e) {
-            response.addProperty("status", Response.getUserLikedSongsFailed.toString());
-            response.addProperty("message", "Failed to retrieve liked songs: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.getUserLikedSongsFailed.toString(), "Failed to retrieve liked songs: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleUpdatePassword(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String username = payload.get("username").getAsString();
         boolean isForgotten = payload.has("isForgotten") && payload.get("isForgotten").getAsBoolean();
         String oldPassword = payload.get("oldPassword").getAsString();
@@ -580,16 +525,14 @@ public class ClientHandler extends Thread {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
 
         // Verify old password
         if (!isForgotten) {
             if (!PasswordUtils.verifyPassword(user.getHashedPassword(), oldPassword)) {
-                response.addProperty("status", Response.incorrectPassword.toString());
-                response.addProperty("message", "Old password is incorrect");
+                response = ResponseUtils.createResponse(Response.incorrectPassword.toString(), "Old password is incorrect");
                 return response;
             }
         }
@@ -603,46 +546,37 @@ public class ClientHandler extends Thread {
             boolean updateSuccess = userRepository.updateUser(user);
 
             if (updateSuccess) {
-                response.addProperty("status", Response.passwordUpdateSuccess.toString());
-                response.addProperty("message", "Password changed successfully");
+                response = ResponseUtils.createResponse(Response.passwordUpdateSuccess.toString(), "Password updated successfully");
             } else {
-                response.addProperty("status", Response.passwordUpdateFailed.toString());
-                response.addProperty("message", "Failed to change password");
+                response = ResponseUtils.createResponse(Response.passwordUpdateFailed.toString(), "Failed to update password");
             }
         } catch (Exception e) {
-            response.addProperty("status", Response.passwordUpdateFailed.toString());
-            response.addProperty("message", "Error changing password: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.passwordUpdateFailed.toString(), "Error changing password: " + e.getMessage());
         }
 
         return response;
     }
 
     private JsonObject handleForgetPasswordRequest(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String email = payload.get("email").getAsString();
         User user = userRepository.findByEmail(email);
         if (user == null) {
-            response.addProperty("status", Response.userNotFound.toString());
-            response.addProperty("message", "User not found with the provided email");
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found with the provided email");
             return response;
         }
         ForgotPasswordHandler forgotPasswordHandler = new ForgotPasswordHandler(userRepository, ResetCodeRepository.getInstance());
         try {
             String result = forgotPasswordHandler.forgotPassword(email);
-            response.addProperty("status", Response.resetCodeSent.toString());
-            response.addProperty("message", result);
+            response = ResponseUtils.createResponse(Response.resetCodeSent.toString(), result);
         } catch (IllegalArgumentException e) {
-            response.addProperty("status", Response.resetCodeFailed.toString());
-            response.addProperty("message", e.getMessage());
+            response = ResponseUtils.createResponse(Response.resetCodeFailed.toString(), e.getMessage());
         } catch (Exception e) {
-            response.addProperty("status", Response.resetCodeFailed.toString());
-            response.addProperty("message", "An error occurred while processing the request: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.resetCodeFailed.toString(), "An error occurred while processing the request: " + e.getMessage());
         }
         return response;
     }
 
     private JsonObject handleVerifyResetCode(JsonObject payload) {
-        JsonObject response = new JsonObject();
         String email = payload.get("email").getAsString();
         String code = payload.get("code").getAsString();
 
@@ -650,18 +584,14 @@ public class ClientHandler extends Thread {
         try {
             boolean isValid = forgotPasswordHandler.verifyCode(email, code);
             if (isValid) {
-                response.addProperty("status", Response.resetCodeVerified.toString());
-                response.addProperty("message", "Reset code verified successfully");
+                response = ResponseUtils.createResponse(Response.resetCodeVerified.toString(), "Reset code verified successfully");
             } else {
-                response.addProperty("status", Response.resetCodeInvalid.toString());
-                response.addProperty("message", "Invalid or expired reset code");
+                response = ResponseUtils.createResponse(Response.resetCodeInvalid.toString(), "Invalid or expired reset code");
             }
         } catch (IllegalArgumentException e) {
-            response.addProperty("status", Response.resetCodeInvalid.toString());
-            response.addProperty("message", e.getMessage());
+            response = ResponseUtils.createResponse(Response.resetCodeInvalid.toString(), e.getMessage());
         } catch (Exception e) {
-            response.addProperty("status", Response.resetCodeFailed.toString());
-            response.addProperty("message", "An error occurred while verifying the reset code: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.resetCodeFailed.toString(), "An error occurred while verifying the reset code: " + e.getMessage());
         }
         return response;
     }
