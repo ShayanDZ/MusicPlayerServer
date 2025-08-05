@@ -42,5 +42,7 @@ public enum Response{
     addMusicSuccess,
     addMusicFailed,
     noLikedSongs,
+    profileImageUploadSuccess,
+    profileImageUploadFailed,
 }
 

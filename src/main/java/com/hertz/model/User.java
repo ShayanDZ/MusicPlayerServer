@@ -30,7 +30,7 @@ public class User {
     }
 
     private String fullName;
-    private String profileImageUrl;
+    private String profileImageBase64;
     private final List<Integer> tracks = new ArrayList<>();
     private final List<Integer> likedSongs = new ArrayList<>();
     private final Playlist recentlyPlayed;
@@ -50,8 +50,8 @@ public class User {
         return tracks;
     }
 
-    public void setProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
+    public void setProfileImageBase64(String profileImageBase64) {
+        this.profileImageBase64 = profileImageBase64;
     }
 
     private static int generateId(String username, String email, LocalDateTime registrationDate) {
@@ -90,8 +90,8 @@ public class User {
         return fullName;
     }
 
-    public String getProfileImageUrl() {
-        return profileImageUrl;
+    public String getProfileImageBase64() {
+        return profileImageBase64;
     }
 
     public List<Playlist> getPlaylists() {
@@ -123,7 +123,7 @@ public class User {
                 ", email='" + email + '\'' +
                 ", registrationDate=" + registrationDate +
                 ", fullName='" + fullName + '\'' +
-                ", profileImageUrl='" + profileImageUrl;
+                ", profileImageUrl='" + profileImageBase64;
     }
     public boolean addTrack(int trackId) {
         if (!tracks.contains(trackId)) {

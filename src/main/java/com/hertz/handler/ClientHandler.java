@@ -104,6 +104,9 @@ public class ClientHandler extends Thread {
                 case "forgetPasswordRequest" ->
                         responseJson = handleForgetPasswordRequest(requestJson.getAsJsonObject("Payload"));
                 case "updatePassword" -> responseJson = handleUpdatePassword(requestJson.getAsJsonObject("Payload"));
+                case "updateUserInfo" ->
+                        responseJson = handleUpdateUserInfo(requestJson.getAsJsonObject("Payload"));
+                case "uploadProfileImage" -> responseJson = handleUploadProfileImage(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -120,6 +123,32 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleUploadProfileImage(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        String base64Image = payload.get("base64Image").getAsString();
+
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+
+        try {
+            user.setProfileImageBase64(base64Image);
+            boolean updateSuccess = userRepository.updateUser(user);
+            if (updateSuccess) {
+                response = ResponseUtils.createResponse(Response.profileImageUploadSuccess.toString(), "Profile image uploaded successfully");
+            } else {
+                response = ResponseUtils.createResponse(Response.profileImageUploadFailed.toString(), "Failed to upload profile image");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.profileImageUploadFailed.toString(), "Error uploading profile image: " + e.getMessage());
+        }
+
+        return response;
     }
 
     private JsonObject handleSignUp(JsonObject payload) {
@@ -171,7 +200,7 @@ public class ClientHandler extends Thread {
                 response.addProperty("email", temp.getEmail());
                 response.addProperty("fullname", temp.getFullName());
                 response.addProperty("registrationDate", temp.getRegistrationDate().toString());
-                response.addProperty("profileImageUrl", temp.getProfileImageUrl() != null ? temp.getProfileImageUrl() : "");
+                response.addProperty("profileImageUrl", temp.getProfileImageBase64() != null ? temp.getProfileImageBase64() : "");
             } else {
                 response = ResponseUtils.createResponse(Response.incorrectPassword.toString(), "Password is Incorrect");
             }
@@ -464,6 +493,11 @@ public class ClientHandler extends Thread {
 
         if (user == null) {
             response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+        User temp = userRepository.findByEmail(payload.get("email").getAsString());
+        if (temp != null && !temp.getUsername().equals(username)) {
+            response = ResponseUtils.createResponse(Response.emailAlreadyExist.toString(), "Email already exists");
             return response;
         }
 
