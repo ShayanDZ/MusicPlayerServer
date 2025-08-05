@@ -189,6 +189,34 @@ public class ClientHandler extends Thread {
         }
         return response;
     }
+    private JsonObject handleAdminLogin(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        String password = payload.get("password").getAsString();
+
+        Admin admin = adminRepository.findByUsername(username);
+
+        if (admin == null) {
+            response = ResponseUtils.createResponse(Response.adminNotFound.toString(), "Admin not found");
+            return response;
+        }
+
+        if (!verifyPassword(admin.getHashedPassword(), password)) {
+            response = ResponseUtils.createResponse(Response.incorrectPassword.toString(), "Incorrect password");
+            return response;
+        }
+
+        JsonObject adminData = new JsonObject();
+        adminData.addProperty("username", admin.getUsername());
+        adminData.addProperty("hashedPassword", admin.getHashedPassword());
+        adminData.addProperty("id", admin.getId());
+        adminData.add("capabilities", gson.toJsonTree(admin.getCapabilities()));
+        adminData.addProperty("adminType", admin.getClass().getSimpleName());
+
+        response = ResponseUtils.createResponse(Response.adminLoginSuccess.toString(), "Admin logged in successfully");
+        response.add("adminData", adminData);
+        return response;
+    }
+
 
     private JsonObject handleGetRecentlyPlayedSongs(JsonObject payload) {
         String username = payload.get("username").getAsString();
