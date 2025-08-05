@@ -65,7 +65,7 @@ public class ClientHandler extends Thread {
                 case "uploadMusic" -> responseJson = handleUploadMusic(requestJson.getAsJsonObject("Payload"));
                 case "getUserMusicList" ->
                         responseJson = handleGetUserMusicList(requestJson.getAsJsonObject("Payload"));
-                case "deleteMusic" -> responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
+                case "removeMusic" -> responseJson = handleRemoveMusic(requestJson.getAsJsonObject("Payload"));
                 case "downloadMusic" -> {
                     responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
                     // For downloadMusic, send response and close connection to signal completion
@@ -150,6 +150,7 @@ public class ClientHandler extends Thread {
                 case "getAllUsers" -> responseJson = handleGetAllUsers(requestJson.getAsJsonObject("Payload"));
                 case "getAllMusic" -> responseJson = handleGetAllMusic(requestJson.getAsJsonObject("Payload"));
                 case "deleteUser" -> responseJson = hangleDeleteUser(requestJson.getAsJsonObject("Payload"));
+                case "deleteMusic" -> responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -166,6 +167,26 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleDeleteMusic(JsonObject payload) {
+        int musicId = payload.get("musicId").getAsInt();
+        Music music = musicRepository.findMusicById(musicId);
+        if (music == null) {
+            response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
+            return response;
+        }
+        try {
+            boolean deleted = musicRepository.deleteMusic(music);
+            if (deleted) {
+                response = ResponseUtils.createResponse(Response.deleteMusicSuccess.toString(), "Music deleted successfully");
+            } else {
+                response = ResponseUtils.createResponse(Response.deleteMusicFailed.toString(), "Failed to delete music");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.deleteMusicFailed.toString(), "Error deleting music: " + e.getMessage());
+        }
+        return response;
     }
 
     private JsonObject hangleDeleteUser(JsonObject payload) {
@@ -582,7 +603,7 @@ public class ClientHandler extends Thread {
         return response;
     }
 
-    private JsonObject handleDeleteMusic(JsonObject payload) {
+    private JsonObject handleRemoveMusic(JsonObject payload) {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 

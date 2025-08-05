@@ -104,4 +104,15 @@ public class MusicRepository {
         }
         return null; // Return null if no music with the given ID is found
     }
+
+    public boolean deleteMusic(Music music) {
+        if (!musicList.contains(music)) {
+            return false; // Music not found
+        }
+        musicList.remove(music);
+        DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+        databaseConnection.getDatabase().getCollection("musics")
+                .deleteOne(new Document("id", music.getId()));
+        return true; // Music successfully deleted
+    }
 }
