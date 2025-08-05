@@ -37,7 +37,11 @@ public class UserRepository {
                     ArrayList likedSongs = (ArrayList) userDocument.get("likedSongs");
                     Playlist recentlyPlayed = Playlist.fromDocument((Document) userDocument.get("recentlyPlayed"));
                     ArrayList playlists = (ArrayList) userDocument.get("playlists");
+                    String profileImageBase64 = userDocument.getString("profileImageBase64");
                     User user = new User(username, email, fullName, hashedPassword, registrationDate,id);
+                    if (profileImageBase64 != null) {
+                        user.setProfileImageBase64(profileImageBase64);
+                    }
                     if (tracks != null) {
                         user.getTracks().addAll(tracks);
                     }
@@ -74,7 +78,8 @@ public class UserRepository {
                 .append("tracks", user.getTracks())
                 .append("likedSongs", user.getLikedSongs())
                 .append("recentlyPlayed", user.getRecentlyPlayed().convertToDocument())
-                .append("playlists", user.getPlaylists());
+                .append("playlists", user.getPlaylists())
+                .append("profileImageBase64", user.getProfileImageBase64());
         databaseConnection.getDatabase().getCollection("users").insertOne(userDocument);
         return Response.signUpSuccess;
     }
@@ -96,7 +101,8 @@ public class UserRepository {
                     .append("recentlyPlayed", user.getRecentlyPlayed().convertToDocument())
                     .append("playlists", user.getPlaylists().stream()
                             .map(Playlist::convertToDocument)
-                            .toList());
+                            .toList())
+                    .append("profileImageBase64", user.getProfileImageBase64());
 
             databaseConnection.getDatabase().getCollection("users")
                     .updateOne(new Document("id", user.getId()), new Document("$set", updatedUserDocument));
