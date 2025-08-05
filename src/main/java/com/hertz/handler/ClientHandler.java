@@ -627,12 +627,12 @@ public class ClientHandler extends Thread {
             boolean removed = user.removeTrack(musicId);
 
             if (removed) {
-                response = ResponseUtils.createResponse(Response.deleteMusicSuccess.toString(), "Music removed from user's tracks successfully");
+                response = ResponseUtils.createResponse(Response.removeMusicSuccess.toString(), "Music removed from user's tracks successfully");
             } else {
                 response = ResponseUtils.createResponse(Response.musicNotFoundForUser.toString(), "Music not found in user's tracks");
             }
         } catch (Exception e) {
-            response = ResponseUtils.createResponse(Response.deleteMusicFailed.toString(), "Failed to remove music: " + e.getMessage());
+            response = ResponseUtils.createResponse(Response.removeMusicFailed.toString(), "Failed to remove music: " + e.getMessage());
         }
 
         return response;
