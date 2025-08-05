@@ -168,7 +168,6 @@ public class ClientHandler extends Thread {
     }
 
 
-
     private JsonObject handleGetAllUsers(JsonObject payload) {
         try {
             List<User> allUsers = userRepository.getAllUser();
@@ -189,6 +188,7 @@ public class ClientHandler extends Thread {
         }
         return response;
     }
+
     private JsonObject handleAdminLogin(JsonObject payload) {
         String username = payload.get("username").getAsString();
         String password = payload.get("password").getAsString();
@@ -217,6 +217,36 @@ public class ClientHandler extends Thread {
         return response;
     }
 
+    private JsonObject handleGetAllMusic(JsonObject payload) {
+        try {
+            List<Music> allMusic = musicRepository.getAllMusic();
+            List<JsonObject> musicJsonList = new ArrayList<>();
+            for (Music music : allMusic) {
+                JsonObject musicJson = new JsonObject();
+                musicJson.addProperty("id", music.getId());
+                musicJson.addProperty("title", music.getTitle());
+                musicJson.add("artist", gson.toJsonTree(music.getArtist()));
+                if (music.getAlbum() != null) {
+                    musicJson.add("album", gson.toJsonTree(music.getAlbum()));
+                } else {
+                    JsonObject emptyAlbum = new JsonObject();
+                    emptyAlbum.addProperty("title", "Unknown Album");
+                    emptyAlbum.add("artist", gson.toJsonTree(new Artist("Unknown Artist", 0)));
+                    musicJson.add("album", emptyAlbum);
+                }
+                musicJson.addProperty("genre", music.getGenre());
+                musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
+                musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
+                musicJson.addProperty("isPublic", music.isPublic());
+                musicJsonList.add(musicJson);
+            }
+            response = ResponseUtils.createResponse(Response.getAllMusicSuccess.toString(), "All Music retrieved successfully");
+            response.add("Payload", gson.toJsonTree(musicJsonList));
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.getAllMusicFailed.toString(), "Failed to retrieve all Music: " + e.getMessage());
+        }
+        return response;
+    }
 
     private JsonObject handleGetRecentlyPlayedSongs(JsonObject payload) {
         String username = payload.get("username").getAsString();
