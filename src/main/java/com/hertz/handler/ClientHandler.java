@@ -149,6 +149,7 @@ public class ClientHandler extends Thread {
                 case "adminLogin" -> responseJson = handleAdminLogin(requestJson.getAsJsonObject("Payload"));
                 case "getAllUsers" -> responseJson = handleGetAllUsers(requestJson.getAsJsonObject("Payload"));
                 case "getAllMusic" -> responseJson = handleGetAllMusic(requestJson.getAsJsonObject("Payload"));
+                case "deleteUser" -> responseJson = hangleDeleteUser(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -165,6 +166,29 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject hangleDeleteUser(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+
+        try {
+            boolean deleted = userRepository.deleteUser(user);
+            if (deleted) {
+                response = ResponseUtils.createResponse(Response.deleteUserSuccess.toString(), "User deleted successfully");
+            } else {
+                response = ResponseUtils.createResponse(Response.deleteUserFailed.toString(), "Failed to delete user");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.deleteUserFailed.toString(), "Error deleting user: " + e.getMessage());
+        }
+        return response;
     }
 
 

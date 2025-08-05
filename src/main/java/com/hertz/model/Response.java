@@ -60,5 +60,8 @@ public enum Response{
     getAllUsersFailed,
     getAllMusicSuccess,
     getAllMusicFailed,
+    deleteUserSuccess,
+    deleteUserFailed,
+
 }
 

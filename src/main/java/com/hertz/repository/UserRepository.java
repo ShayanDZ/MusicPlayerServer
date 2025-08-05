@@ -129,4 +129,15 @@ public class UserRepository {
         }
         return null;
     }
+
+    public boolean deleteUser(User user) {
+        if (!userList.contains(user)) {
+            return false; // User not found
+        }
+        userList.remove(user);
+        DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+        databaseConnection.getDatabase().getCollection("users")
+                .deleteOne(new Document("id", user.getId()));
+        return true; // User successfully deleted
+    }
 }
