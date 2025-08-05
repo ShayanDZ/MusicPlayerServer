@@ -104,10 +104,39 @@ public class ClientHandler extends Thread {
                 case "forgetPasswordRequest" ->
                         responseJson = handleForgetPasswordRequest(requestJson.getAsJsonObject("Payload"));
                 case "updatePassword" -> responseJson = handleUpdatePassword(requestJson.getAsJsonObject("Payload"));
-                case "updateUserInfo" ->
-                        responseJson = handleUpdateUserInfo(requestJson.getAsJsonObject("Payload"));
-                case "uploadProfileImage" -> responseJson = handleUploadProfileImage(requestJson.getAsJsonObject("Payload"));
-                case "getProfileImage" -> responseJson = handleGetProfileImage(requestJson.getAsJsonObject("Payload"));
+                case "updateUserInfo" -> responseJson = handleUpdateUserInfo(requestJson.getAsJsonObject("Payload"));
+                case "uploadProfileImage" ->
+                        responseJson = handleUploadProfileImage(requestJson.getAsJsonObject("Payload"));
+                case "getProfileImage" -> {
+                    responseJson = handleGetProfileImage(requestJson.getAsJsonObject("Payload"));
+                    // For downloadMusic, send response and close connection to signal completion
+                    if (responseJson.has("status") &&
+                            responseJson.get("status").getAsString().equals(Response.getProfileImageSuccess.toString())) {
+                        String responseString = responseJson.toString();
+                        System.out.println("Sending download response: " + responseString.length() + " characters");
+
+                        // Send the response using PrintWriter to ensure proper JSON transmission
+                        try {
+                            out.print(responseString);
+                            out.flush();
+                            // Small delay to ensure complete transmission
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Error sending response: " + e.getMessage());
+                        }
+                        // Close the connection to signal completion
+                        socket.close();
+                        return; // Exit early
+                    } else {
+                        System.out.println("Sending download error response");
+                        out.println(responseJson.toString());
+                    }
+                    return; // Exit early for downloadMusic
+                }
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -153,7 +182,7 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleUploadProfileImage(JsonObject payload) {
         String username = payload.get("username").getAsString();
-        String base64Image = payload.get("base64Image").getAsString();
+        String base64Image = payload.get("imageData").getAsString();
 
         User user = userRepository.findByUsername(username);
 
@@ -587,9 +616,13 @@ public class ClientHandler extends Thread {
         // Find the user by username
         User user = userRepository.findByUsername(username);
 
-        if (user == null) {
+        if (user == null && !isForgotten) {
             response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
+        }
+        if (user == null && payload.has("email")) {
+            String email = payload.get("email").getAsString();
+            user = userRepository.findByEmail(email);
         }
 
         // Verify old password
@@ -603,6 +636,7 @@ public class ClientHandler extends Thread {
         try {
             // Hash and update the new password
             String hashedPassword = PasswordUtils.hashPassword(newPassword);
+            assert user != null;
             user.setHashedPassword(hashedPassword);
 
             // Update the user in the repository
