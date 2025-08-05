@@ -140,6 +140,7 @@ public class ClientHandler extends Thread {
                 case "getPublicMusicList" -> responseJson = handleGetPublicMusicList(requestJson.getAsJsonObject("Payload"));
                 case "addMusicToLibrary" -> responseJson = handleAddMusicToLibrary(requestJson.getAsJsonObject("Payload"));
                 case "makeMusicPublic" -> responseJson = handleMakeMusicPublic(requestJson.getAsJsonObject("Payload"));
+                case "getRecentlyPlayedSongs" -> responseJson = handleGetRecentlyPlayedSongs(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -156,6 +157,30 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleGetRecentlyPlayedSongs(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+        try {
+            List<Integer> recentlyPlayedSongs = user.getRecentlyPlayed().getTracks();
+            if (recentlyPlayedSongs.isEmpty()) {
+                response = ResponseUtils.createResponse(Response.noRecentlyPlayedSongs.toString(), "No recently played songs found for the user");
+                return response;
+            }
+            response = ResponseUtils.createResponse(Response.getRecentlyPlayedSongsSuccess.toString(), "Recently played songs retrieved successfully");
+            response.add("Payload", gson.toJsonTree(recentlyPlayedSongs));
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.getRecentlyPlayedSongsFailed.toString(), "Failed to retrieve recently played songs: " + e.getMessage());
+        }
+
+        return response;
     }
 
     private JsonObject handleMakeMusicPublic(JsonObject payload) {
