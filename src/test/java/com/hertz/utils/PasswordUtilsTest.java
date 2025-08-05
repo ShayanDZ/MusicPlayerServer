@@ -60,4 +60,8 @@ class PasswordUtilsTest {
         assertThrows(IllegalArgumentException.class, () -> PasswordUtils.hashPassword(null));
         assertThrows(IllegalArgumentException.class, () -> PasswordUtils.hashPassword(""));
     }
+    @Test
+    void testToViewHashOfAPassword(){
+        System.out.println("Hash of '$uper_@dmin_very_$ecret': " + PasswordUtils.hashPassword("$uper_@dmin_very_$ecret"));
+    }
 }
