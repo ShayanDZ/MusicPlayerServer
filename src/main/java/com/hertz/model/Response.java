@@ -54,5 +54,11 @@ public enum Response{
     noRecentlyPlayedSongs,
     getRecentlyPlayedSongsSuccess,
     getRecentlyPlayedSongsFailed,
+    adminNotFound,
+    adminLoginSuccess,
+    getAllUsersSuccess,
+    getAllUsersFailed,
+    getAllMusicSuccess,
+    getAllMusicFailed,
 }
 

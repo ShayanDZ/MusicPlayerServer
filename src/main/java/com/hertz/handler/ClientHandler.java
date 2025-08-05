@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.hertz.model.*;
+import com.hertz.repository.AdminRepository;
 import com.hertz.repository.MusicRepository;
 import com.hertz.repository.ResetCodeRepository;
 import com.hertz.repository.UserRepository;
@@ -24,6 +25,7 @@ import static com.hertz.utils.PasswordUtils.verifyPassword;
 
 public class ClientHandler extends Thread {
     private static final Gson gson = new Gson();
+    private static final AdminRepository adminRepository = AdminRepository.getInstance();
     private static final UserRepository userRepository = UserRepository.getInstance();
     private static final MusicRepository musicRepository = MusicRepository.getInstance();
     private final Socket socket;
@@ -137,10 +139,16 @@ public class ClientHandler extends Thread {
                     }
                     return; // Exit early for downloadMusic
                 }
-                case "getPublicMusicList" -> responseJson = handleGetPublicMusicList(requestJson.getAsJsonObject("Payload"));
-                case "addMusicToLibrary" -> responseJson = handleAddMusicToLibrary(requestJson.getAsJsonObject("Payload"));
+                case "getPublicMusicList" ->
+                        responseJson = handleGetPublicMusicList(requestJson.getAsJsonObject("Payload"));
+                case "addMusicToLibrary" ->
+                        responseJson = handleAddMusicToLibrary(requestJson.getAsJsonObject("Payload"));
                 case "makeMusicPublic" -> responseJson = handleMakeMusicPublic(requestJson.getAsJsonObject("Payload"));
-                case "getRecentlyPlayedSongs" -> responseJson = handleGetRecentlyPlayedSongs(requestJson.getAsJsonObject("Payload"));
+                case "getRecentlyPlayedSongs" ->
+                        responseJson = handleGetRecentlyPlayedSongs(requestJson.getAsJsonObject("Payload"));
+                case "adminLogin" -> responseJson = handleAdminLogin(requestJson.getAsJsonObject("Payload"));
+                case "getAllUsers" -> responseJson = handleGetAllUsers(requestJson.getAsJsonObject("Payload"));
+                case "getAllMusic" -> responseJson = handleGetAllMusic(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -157,6 +165,29 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+
+
+    private JsonObject handleGetAllUsers(JsonObject payload) {
+        try {
+            List<User> allUsers = userRepository.getAllUser();
+            List<JsonObject> userJsonList = new ArrayList<>();
+            for (User user : allUsers) {
+                JsonObject userJson = new JsonObject();
+                userJson.addProperty("username", user.getUsername());
+                userJson.addProperty("email", user.getEmail());
+                userJson.addProperty("fullname", user.getFullName());
+                userJson.addProperty("registrationDate", user.getRegistrationDate().toString());
+                userJson.addProperty("profileImageBase64", user.getProfileImageBase64() != null ? user.getProfileImageBase64() : "");
+                userJsonList.add(userJson);
+            }
+            response = ResponseUtils.createResponse(Response.getAllUsersSuccess.toString(), "All users retrieved successfully");
+            response.add("Payload", gson.toJsonTree(userJsonList));
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.getAllUsersFailed.toString(), "Failed to retrieve users: " + e.getMessage());
+        }
+        return response;
     }
 
     private JsonObject handleGetRecentlyPlayedSongs(JsonObject payload) {
