@@ -47,5 +47,7 @@ public enum Response{
     getProfileImageSuccess,
     profileImageNotFound,
     profileImageRetrievalFailed,
+    getPublicMusicListSuccess,
+    getPublicMusicListFailed,
 }
 

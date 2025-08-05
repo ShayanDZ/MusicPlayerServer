@@ -137,6 +137,7 @@ public class ClientHandler extends Thread {
                     }
                     return; // Exit early for downloadMusic
                 }
+                case "getPublicMusicList" -> responseJson = handleGetPublicMusicList(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -153,6 +154,35 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleGetPublicMusicList(JsonObject payload) {
+        try {
+            List<Music> publicMusicList = musicRepository.getAllMusic().stream()
+                    .filter(Music::isPublic)
+                    .toList();
+
+            List<JsonObject> musicJsonList = new ArrayList<>();
+            for (Music music : publicMusicList) {
+                JsonObject musicJson = new JsonObject();
+                musicJson.addProperty("id", music.getId());
+                musicJson.addProperty("title", music.getTitle());
+                musicJson.addProperty("artist", music.getArtist().getName());
+                musicJson.addProperty("genre", music.getGenre());
+                musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
+                musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
+                musicJson.addProperty("extension", music.getExtension());
+                musicJson.addProperty("likeCount", music.getLikeCount());
+                musicJson.addProperty("isPublic", music.isPublic());
+                musicJsonList.add(musicJson);
+            }
+            response = ResponseUtils.createResponse(Response.getPublicMusicListSuccess.toString(), "Public Music list retrieved successfully");
+            response.add("Payload", gson.toJsonTree(musicJsonList));
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.getPublicMusicListFailed.toString(), "Failed to retrieve public music list: " + e.getMessage());
+        }
+
+        return response;
     }
 
     private JsonObject handleGetProfileImage(JsonObject payload) {
@@ -347,9 +377,9 @@ public class ClientHandler extends Thread {
                 musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
                 musicJson.addProperty("extension", music.getExtension());
                 musicJson.addProperty("likeCount", music.getLikeCount());
-                // Check if the user has liked this song
                 boolean isLiked = user.getLikedSongs().contains(music.getId());
                 musicJson.addProperty("isLiked", isLiked);
+                musicJson.addProperty("isPublic", music.isPublic());
                 musicJsonList.add(musicJson);
             }
             response = ResponseUtils.createResponse(Response.getUserMusicListSuccess.toString(), "Music list retrieved successfully");
