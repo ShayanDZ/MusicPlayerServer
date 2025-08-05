@@ -35,7 +35,9 @@ public class MusicRepository {
                     int id = musicDocument.getInteger("id");
                     String extension = musicDocument.getString("extension");
                     String base64 = musicDocument.getString("base64");
+                    boolean isPublic = musicDocument.getBoolean("isPublic", false); // Default to false if not present
                     Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension,base64);
+                    music.setPublic(isPublic);
                     musicList.add(music);
                 });
 
@@ -66,7 +68,7 @@ public class MusicRepository {
                 .append("extension", music.getExtension())
                 .append("base64", music.getBase64())
                 .append("likeCount", music.getLikeCount())
-                .append("isLiked", music.isLiked());
+                .append("isPublic", music.isPublic());
         databaseConnection.getDatabase().getCollection("musics").insertOne(musicDocument);
         return Response.uploadMusicSuccess;
     }
@@ -84,7 +86,7 @@ public class MusicRepository {
                     .append("extension", music.getExtension())
                     .append("base64", music.getBase64())
                     .append("likeCount", music.getLikeCount())
-                    .append("isLiked", music.isLiked());
+                    .append("isPublic", music.isPublic());
 
             databaseConnection.getDatabase().getCollection("musics")
                     .updateOne(new Document("id", music.getId()), new Document("$set", updatedMusicDocument));

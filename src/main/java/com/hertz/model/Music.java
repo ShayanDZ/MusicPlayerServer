@@ -31,7 +31,7 @@ public class Music {
     }
 
     private int likeCount;
-    private boolean isLiked = false;
+    private boolean isPublic = false;
 
     public Music(String title, Artist artist, String genre, int durationInSeconds, LocalDateTime releaseDate, Album album, Integer id, String extension, String base64) {
         this.title = title;
@@ -99,8 +99,8 @@ public class Music {
         return likeCount;
     }
 
-    public boolean isLiked() {
-        return isLiked;
+    public boolean isPublic() {
+        return isPublic;
     }
 
     @Override
@@ -141,8 +141,12 @@ public class Music {
         musicDocument.append("extension", this.extension);
         musicDocument.append("base64", this.base64);
         musicDocument.append("likeCount", this.likeCount);
-        musicDocument.append("isLiked", this.isLiked);
+        musicDocument.append("isLiked", this.isPublic);
         return musicDocument;
+    }
+
+    public void setPublic(boolean aPublic) {
+        isPublic = aPublic;
     }
 
     public static Music fromDocument(Document document) {
@@ -163,7 +167,7 @@ public class Music {
 
         Music music = new Music(title, artist, genre, durationInSeconds, releaseDate,addedDate, album, id, extension, base64);
         music.setLikeCount(likeCount);
-        music.isLiked = isLiked;
+        music.isPublic = isLiked;
         return music;
     }
 }

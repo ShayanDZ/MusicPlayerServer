@@ -269,12 +269,15 @@ public class ClientHandler extends Thread {
             LocalDateTime releaseDate = DateParser.parseIso8601Date(musicMap.get("releaseDate").getAsString());
             int id = musicMap.get("id").getAsInt();
             String extension = musicMap.get("extension").getAsString();
+            boolean isPublic = musicMap.has("isPublic") && musicMap.get("isPublic").getAsBoolean();
             Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64Data);
+            music.setPublic(isPublic);
             // Add music to user's tracks
             boolean newSongForUser = user.addTrack(id);
             userRepository.updateUser(user);
             // Save music to database
             Response responseMessage = musicRepository.addMusic(music);
+            musicRepository.updateMusic(music); // Ensure music is updated in the repository even if it already exists
             if (responseMessage == Response.uploadMusicSuccess) {
                 response = ResponseUtils.createResponse(Response.uploadMusicSuccess.toString(), "Music uploaded successfully");
             } else if (newSongForUser) {
