@@ -49,5 +49,7 @@ public enum Response{
     profileImageRetrievalFailed,
     getPublicMusicListSuccess,
     getPublicMusicListFailed,
+    makeMusicPublicSuccess,
+    makeMusicPublicFailed,
 }
 

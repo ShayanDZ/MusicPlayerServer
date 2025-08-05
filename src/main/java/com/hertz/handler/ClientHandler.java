@@ -139,6 +139,7 @@ public class ClientHandler extends Thread {
                 }
                 case "getPublicMusicList" -> responseJson = handleGetPublicMusicList(requestJson.getAsJsonObject("Payload"));
                 case "addMusicToLibrary" -> responseJson = handleAddMusicToLibrary(requestJson.getAsJsonObject("Payload"));
+                case "makeMusicPublic" -> responseJson = handleMakeMusicPublic(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -155,6 +156,30 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleMakeMusicPublic(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        int musicId = payload.get("musicId").getAsInt();
+
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+        Music music = musicRepository.findMusicById(musicId);
+        if (music == null) {
+            response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
+            return response;
+        }
+        try {
+            music.setPublic(true);
+            musicRepository.updateMusic(music);
+            response = ResponseUtils.createResponse(Response.makeMusicPublicSuccess.toString(), "Music made public successfully");
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.makeMusicPublicFailed.toString(), "Failed to make music public: " + e.getMessage());
+        }
+        return response;
     }
 
     private JsonObject handleAddMusicToLibrary(JsonObject payload) {
