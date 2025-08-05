@@ -107,6 +107,7 @@ public class ClientHandler extends Thread {
                 case "updateUserInfo" ->
                         responseJson = handleUpdateUserInfo(requestJson.getAsJsonObject("Payload"));
                 case "uploadProfileImage" -> responseJson = handleUploadProfileImage(requestJson.getAsJsonObject("Payload"));
+                case "getProfileImage" -> responseJson = handleGetProfileImage(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -123,6 +124,31 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleGetProfileImage(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+
+        try {
+            String profileImageBase64 = user.getProfileImageBase64();
+            if (profileImageBase64 != null && !profileImageBase64.isEmpty()) {
+                response = ResponseUtils.createResponse(Response.getProfileImageSuccess.toString(), "Profile image retrieved successfully");
+                response.addProperty("Payload", profileImageBase64);
+            } else {
+                response = ResponseUtils.createResponse(Response.profileImageNotFound.toString(), "Profile image not found for the user");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.profileImageRetrievalFailed.toString(), "Failed to retrieve profile image: " + e.getMessage());
+        }
+
+        return response;
     }
 
     private JsonObject handleUploadProfileImage(JsonObject payload) {

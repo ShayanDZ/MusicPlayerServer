@@ -44,5 +44,8 @@ public enum Response{
     noLikedSongs,
     profileImageUploadSuccess,
     profileImageUploadFailed,
+    getProfileImageSuccess,
+    profileImageNotFound,
+    profileImageRetrievalFailed,
 }
 
