@@ -138,6 +138,7 @@ public class ClientHandler extends Thread {
                     return; // Exit early for downloadMusic
                 }
                 case "getPublicMusicList" -> responseJson = handleGetPublicMusicList(requestJson.getAsJsonObject("Payload"));
+                case "addMusicToLibrary" -> responseJson = handleAddMusicToLibrary(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -154,6 +155,33 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleAddMusicToLibrary(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        int musicId = payload.get("musicId").getAsInt();
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+        Music music = musicRepository.findMusicById(musicId);
+        if (music == null) {
+            response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
+            return response;
+        }
+        try {
+            boolean newSongForUser = user.addTrack(musicId);
+            userRepository.updateUser(user);
+            if (newSongForUser) {
+                response = ResponseUtils.createResponse(Response.addMusicSuccess.toString(), "Music added to user : " + user.getUsername());
+            } else {
+                response = ResponseUtils.createResponse(Response.musicAlreadyExists.toString(), "Music already exists in the user music List");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.addMusicFailed.toString(), "Failed to add music to library: " + e.getMessage());
+        }
+        return response;
     }
 
     private JsonObject handleGetPublicMusicList(JsonObject payload) {
@@ -328,8 +356,8 @@ public class ClientHandler extends Thread {
             LocalDateTime releaseDate = DateParser.parseIso8601Date(musicMap.get("releaseDate").getAsString());
             int id = musicMap.get("id").getAsInt();
             String extension = musicMap.get("extension").getAsString();
-            boolean isPublic = musicMap.has("isPublic") && musicMap.get("isPublic").getAsBoolean();
             Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension, base64Data);
+            boolean isPublic = payload.has("isPublic") && payload.get("isPublic").getAsBoolean();
             music.setPublic(isPublic);
             // Add music to user's tracks
             boolean newSongForUser = user.addTrack(id);
