@@ -43,7 +43,7 @@ public class UserRepository {
                         user.setProfileImageBase64(profileImageBase64);
                     }
                     if (tracks != null) {
-                        user.getTracks().addAll(tracks);
+                        user.getTracksId().addAll(tracks);
                     }
                     if (likedSongs != null) {
                         user.getLikedSongs().addAll(likedSongs);
@@ -75,7 +75,7 @@ public class UserRepository {
                 .append("hashedPassword", user.getHashedPassword())
                 .append("registrationDate", java.util.Date.from(user.getRegistrationDate().atZone(ZoneId.systemDefault()).toInstant()))
                 .append("id", user.getId())
-                .append("tracks", user.getTracks())
+                .append("tracks", user.getTracksId())
                 .append("likedSongs", user.getLikedSongs())
                 .append("recentlyPlayed", user.getRecentlyPlayed().convertToDocument())
                 .append("playlists", user.getPlaylists())
@@ -99,7 +99,7 @@ public class UserRepository {
                     .append("hashedPassword", user.getHashedPassword())
                     .append("registrationDate", java.util.Date.from(user.getRegistrationDate().atZone(ZoneId.systemDefault()).toInstant()))
                     .append("id", user.getId())
-                    .append("tracks", user.getTracks())
+                    .append("tracks", user.getTracksId())
                     .append("likedSongs", user.getLikedSongs())
                     .append("recentlyPlayed", user.getRecentlyPlayed().convertToDocument())
                     .append("playlists", user.getPlaylists().stream()

@@ -118,4 +118,13 @@ public class MusicRepository {
                 .deleteOne(new Document("id", music.getId()));
         return true; // Music successfully deleted
     }
+
+    public Music getMusicById(Integer trackId) {
+        for (Music music : musicList) {
+            if (music.getId() == trackId) {
+                return music;
+            }
+        }
+        return null; // Return null if no music with the given ID is found
+    }
 }

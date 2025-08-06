@@ -1,5 +1,7 @@
 package com.hertz.model;
 
+import com.hertz.repository.MusicRepository;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -46,8 +48,18 @@ public class User {
         recentlyPlayed = new Playlist("Recently Played", this.id, "Tracks played recently", new LinkedList<Integer>());
     }
 
-    public List<Integer> getTracks() {
+    public List<Integer> getTracksId() {
         return tracks;
+    }
+    public List<Music> getTracks() {
+        List<Music> musicList = new ArrayList<>();
+        for (Integer trackId : tracks) {
+            Music music = MusicRepository.getInstance().getMusicById(trackId);
+            if (music != null) {
+                musicList.add(music);
+            }
+        }
+        return musicList;
     }
 
     public void setProfileImageBase64(String profileImageBase64) {

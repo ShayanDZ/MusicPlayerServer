@@ -735,25 +735,10 @@ public class ClientHandler extends Thread {
         }
 
         try {
-            List<Integer> userMusicListIDs = user.getTracks();
             List<JsonObject> musicJsonList = new ArrayList<>();
-            List<Music> userMusicList = musicRepository.getAllMusic().stream()
-                    .filter(music -> userMusicListIDs.contains(music.getId()))
-                    .toList();
+            List<Music> userMusicList = user.getTracks();
             for (Music music : userMusicList) {
-                JsonObject musicJson = new JsonObject();
-                musicJson.addProperty("id", music.getId());
-                musicJson.addProperty("title", music.getTitle());
-                musicJson.addProperty("artist", music.getArtist().getName());
-                musicJson.addProperty("genre", music.getGenre());
-                musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
-                musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
-                musicJson.addProperty("extension", music.getExtension());
-                musicJson.addProperty("likeCount", music.getLikeCount());
-                boolean isLiked = user.getLikedSongs().contains(music.getId());
-                musicJson.addProperty("isLiked", isLiked);
-                musicJson.addProperty("isPublic", music.isPublic());
-                musicJsonList.add(musicJson);
+                musicToJsonObject(user, musicJsonList, music);
             }
             response = ResponseUtils.createResponse(Response.getUserMusicListSuccess.toString(), "Music list retrieved successfully");
             response.add("Payload", gson.toJsonTree(musicJsonList));
@@ -938,19 +923,7 @@ public class ClientHandler extends Thread {
                 for (Integer trackId : playlist.getTracks()) {
                     Music music = musicRepository.findMusicById(trackId);
                     if (music != null) {
-                        JsonObject musicJson = new JsonObject();
-                        musicJson.addProperty("id", music.getId());
-                        musicJson.addProperty("title", music.getTitle());
-                        musicJson.addProperty("artist", music.getArtist().getName());
-                        musicJson.addProperty("genre", music.getGenre());
-                        musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
-                        musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
-                        musicJson.addProperty("extension", music.getExtension());
-                        musicJson.addProperty("likeCount", music.getLikeCount());
-                        boolean isLiked = user.getLikedSongs().contains(music.getId());
-                        musicJson.addProperty("isLiked", isLiked);
-                        musicJson.addProperty("isPublic", music.isPublic());
-                        musicJsonList.add(musicJson);
+                        musicToJsonObject(user, musicJsonList, music);
                     }
                 }
                 playlistJson.add("tracks", gson.toJsonTree(musicJsonList));
@@ -967,6 +940,22 @@ public class ClientHandler extends Thread {
         }
 
         return response;
+    }
+
+    private static void musicToJsonObject(User user, List<JsonObject> musicJsonList, Music music) {
+        JsonObject musicJson = new JsonObject();
+        musicJson.addProperty("id", music.getId());
+        musicJson.addProperty("title", music.getTitle());
+        musicJson.addProperty("artist", music.getArtist().getName());
+        musicJson.addProperty("genre", music.getGenre());
+        musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
+        musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
+        musicJson.addProperty("extension", music.getExtension());
+        musicJson.addProperty("likeCount", music.getLikeCount());
+        boolean isLiked = user.getLikedSongs().contains(music.getId());
+        musicJson.addProperty("isLiked", isLiked);
+        musicJson.addProperty("isPublic", music.isPublic());
+        musicJsonList.add(musicJson);
     }
 
     private JsonObject handleUpdateUserInfo(JsonObject payload) {
