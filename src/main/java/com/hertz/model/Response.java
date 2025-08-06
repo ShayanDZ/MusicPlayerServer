@@ -69,5 +69,10 @@ public enum Response{
     uploadPlaylistSuccess,
     uploadPlaylistFailed,
     noPlaylists,
+    playlistNotFound,
+    addSongToPlaylistSuccess,
+    addSongToPlaylistFailed,
+    songAlreadyInPlaylist,
+
 }
 

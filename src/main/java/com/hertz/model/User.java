@@ -43,7 +43,7 @@ public class User {
         this.fullName = fullName;
         this.registrationDate = registrationDate;
         this.id = (id == null || id == 0) ? (generateId(username, email, registrationDate)) : id;
-        recentlyPlayed = new Playlist("Recently Played", this.id, "Tracks played recently",new LinkedList<Integer>());
+        recentlyPlayed = new Playlist("Recently Played", this.id, "Tracks played recently", new LinkedList<Integer>());
     }
 
     public List<Integer> getTracks() {
@@ -125,6 +125,7 @@ public class User {
                 ", fullName='" + fullName + '\'' +
                 ", profileImageUrl='" + profileImageBase64;
     }
+
     public boolean addTrack(int trackId) {
         if (!tracks.contains(trackId)) {
             tracks.add(trackId);
@@ -132,9 +133,11 @@ public class User {
         }
         return false;
     }
+
     public boolean removeTrack(int trackId) {
         return tracks.remove(Integer.valueOf(trackId));
     }
+
     public boolean addPlaylist(Playlist playlist) {
         if (!playlists.contains(playlist)) {
             playlists.add(playlist);
@@ -142,4 +145,49 @@ public class User {
         }
         return false;
     }
+
+    public boolean removePlaylist(Playlist playlist) {
+        return playlists.remove(playlist);
+    }
+
+    public boolean addLikedSong(int songId) {
+        if (!likedSongs.contains(songId)) {
+            likedSongs.add(songId);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean removeLikedSong(int songId) {
+        return likedSongs.remove(Integer.valueOf(songId));
+    }
+
+    public boolean hasTrack(int trackId) {
+        return tracks.contains(trackId);
+    }
+
+    public boolean hasLikedSong(int songId) {
+        return likedSongs.contains(songId);
+    }
+
+    public boolean hasPlaylist(Playlist playlist) {
+        return playlists.contains(playlist);
+    }
+
+    public boolean hasPlaylist(int playlistId) {
+        return playlists.stream().anyMatch(playlist -> playlist.getId() == playlistId);
+    }
+    public Playlist getPlaylistById(int playlistId) {
+        return playlists.stream()
+                .filter(playlist -> playlist.getId() == playlistId)
+                .findFirst()
+                .orElse(null);
+    }
+    public Playlist getPlaylistByName(String name) {
+        return playlists.stream()
+                .filter(playlist -> playlist.getName().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
+    }
+
 }

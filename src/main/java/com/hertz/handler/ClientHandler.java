@@ -153,6 +153,7 @@ public class ClientHandler extends Thread {
                 case "updateRecentlyPlayed" ->
                         responseJson = handleUpdateRecentlyPlayed(requestJson.getAsJsonObject("Payload"));
                 case "uploadPlaylist" -> responseJson = handleUploadPlaylist(requestJson.getAsJsonObject("Payload"));
+                case "addSongToPlaylist" -> responseJson = handleAddSongToPlaylist(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -169,6 +170,38 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleAddSongToPlaylist(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        int musicId = payload.get("musicId").getAsInt();
+        int playlistId = payload.get("playlistId").getAsInt();
+
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+
+        Playlist playlist = user.getPlaylistById(playlistId);
+
+        if (playlist == null) {
+            response = ResponseUtils.createResponse(Response.playlistNotFound.toString(), "Playlist not found");
+            return response;
+        }
+
+        try {
+            boolean added = playlist.addTrack(musicId);
+            if (added) {
+                userRepository.updateUser(user);
+                response = ResponseUtils.createResponse(Response.addSongToPlaylistSuccess.toString(), "Song added to playlist successfully");
+            } else {
+                response = ResponseUtils.createResponse(Response.songAlreadyInPlaylist.toString(), "Song already exists in the playlist");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.addSongToPlaylistFailed.toString(), "Error adding song to playlist: " + e.getMessage());
+        }
+        return response;
     }
 
     private JsonObject handleUploadPlaylist(JsonObject payload) {
@@ -762,7 +795,7 @@ public class ClientHandler extends Thread {
             if (user.getLikedSongs().contains(music.getId())) {
                 response = ResponseUtils.createResponse(Response.alreadyLiked.toString(), "Song is already liked by the user");
             } else {
-                user.getLikedSongs().add(music.getId());
+                user.addLikedSong(music.getId());
                 music.setLikeCount(music.getLikeCount() + 1);
 
                 // Update the music's likeCount in the database
@@ -801,7 +834,7 @@ public class ClientHandler extends Thread {
             if (!user.getLikedSongs().contains(music.getId())) {
                 response = ResponseUtils.createResponse(Response.NotLiked.toString(), "Song is not liked by the user");
             } else {
-                user.getLikedSongs().remove(Integer.valueOf(music.getId()));
+                user.removeLikedSong(music.getId());
                 // Ensure like count doesn't go negative
                 int newLikeCount = Math.max(0, music.getLikeCount() - 1);
                 music.setLikeCount(newLikeCount);
