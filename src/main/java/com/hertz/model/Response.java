@@ -73,6 +73,8 @@ public enum Response{
     addSongToPlaylistSuccess,
     addSongToPlaylistFailed,
     songAlreadyInPlaylist,
-
+    deleteSongFromPlaylistSuccess,
+    deleteSongFromPlaylistFailed,
+    songNotInPlaylist,
 }
 

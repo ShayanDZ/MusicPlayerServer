@@ -154,6 +154,7 @@ public class ClientHandler extends Thread {
                         responseJson = handleUpdateRecentlyPlayed(requestJson.getAsJsonObject("Payload"));
                 case "uploadPlaylist" -> responseJson = handleUploadPlaylist(requestJson.getAsJsonObject("Payload"));
                 case "addSongToPlaylist" -> responseJson = handleAddSongToPlaylist(requestJson.getAsJsonObject("Payload"));
+                case "deleteSongFromPlaylist" -> responseJson = handleDeleteSongFromPlaylist(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -170,6 +171,39 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleDeleteSongFromPlaylist(JsonObject payload) {
+
+        String username = payload.get("username").getAsString();
+        int musicId = payload.get("musicId").getAsInt();
+        int playlistId = payload.get("playlistId").getAsInt();
+
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+
+        Playlist playlist = user.getPlaylistById(playlistId);
+
+        if (playlist == null) {
+            response = ResponseUtils.createResponse(Response.playlistNotFound.toString(), "Playlist not found");
+            return response;
+        }
+
+        try {
+            boolean removed = playlist.removeTrack(musicId);
+            if (removed) {
+                userRepository.updateUser(user);
+                response = ResponseUtils.createResponse(Response.deleteSongFromPlaylistSuccess.toString(), "Song removed from playlist successfully");
+            } else {
+                response = ResponseUtils.createResponse(Response.songNotInPlaylist.toString(), "Song not found in the playlist");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.deleteSongFromPlaylistFailed.toString(), "Error removing song from playlist: " + e.getMessage());
+        }
+        return response;
     }
 
     private JsonObject handleAddSongToPlaylist(JsonObject payload) {
@@ -228,12 +262,12 @@ public class ClientHandler extends Thread {
             Playlist playlist = new Playlist(name, ownerId, description, id, tracks);
 
             // Add playlist to user's playlists
-            boolean updatePlaylistSuccess = user.addPlaylist(playlist);
+            boolean uploadPlaylistSuccess = user.addPlaylist(playlist);
 
             // Update user in the repository
             boolean updateSuccess = userRepository.updateUser(user);
 
-            if (updateSuccess && updatePlaylistSuccess) {
+            if (updateSuccess && uploadPlaylistSuccess) {
                 response = ResponseUtils.createResponse(Response.uploadPlaylistSuccess.toString(), "Playlist uploaded successfully");
             } else {
                 response = ResponseUtils.createResponse(Response.uploadPlaylistFailed.toString(), "Failed to upload playlist");
