@@ -103,7 +103,7 @@ public class AdminRepository {
 
     public synchronized Admin findByUsername(String username) {
         return adminList.stream()
-                .filter(admin -> admin.getUsername().equals(username))
+                .filter(admin -> admin.getUsername().equalsIgnoreCase(username))
                 .findFirst()
                 .orElse(null);
     }

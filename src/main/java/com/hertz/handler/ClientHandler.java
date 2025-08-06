@@ -455,9 +455,9 @@ public class ClientHandler extends Thread {
         String password = payload.get("password").getAsString();
 
         boolean emailExist = userRepository.getAllUser().stream()
-                .anyMatch(user -> user.getEmail().equals(email));
+                .anyMatch(user -> user.getEmail().equalsIgnoreCase(email));
         boolean usernameExist = userRepository.getAllUser().stream()
-                .anyMatch(user -> user.getUsername().equals(username));
+                .anyMatch(user -> user.getUsername().equalsIgnoreCase(username));
 
         if (emailExist) {
             response = ResponseUtils.createResponse(Response.emailAlreadyExist.toString(), "Email already exists");
@@ -796,7 +796,7 @@ public class ClientHandler extends Thread {
             return response;
         }
         User temp = userRepository.findByEmail(payload.get("email").getAsString());
-        if (temp != null && !temp.getUsername().equals(username)) {
+        if (temp != null && !temp.getUsername().equalsIgnoreCase(username)) {
             response = ResponseUtils.createResponse(Response.emailAlreadyExist.toString(), "Email already exists");
             return response;
         }

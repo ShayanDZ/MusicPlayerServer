@@ -114,7 +114,7 @@ public class UserRepository {
     }
     public synchronized User findByUsername(String username) {
         for (User user : userList) {
-            if (user.getUsername().equals(username)) {
+            if (user.getUsername().equalsIgnoreCase(username)) {
                 return user;
             }
         }
@@ -123,7 +123,7 @@ public class UserRepository {
 
     public synchronized User findByEmail(String email) {
         for (User user : userList) {
-            if (user.getEmail().equals(email)) {
+            if (user.getEmail().equalsIgnoreCase(email)) {
                 return user;
             }
         }
