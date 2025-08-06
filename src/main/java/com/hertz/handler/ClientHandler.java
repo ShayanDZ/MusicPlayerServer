@@ -151,6 +151,7 @@ public class ClientHandler extends Thread {
                 case "getAllMusic" -> responseJson = handleGetAllMusic(requestJson.getAsJsonObject("Payload"));
                 case "deleteUser" -> responseJson = hangleDeleteUser(requestJson.getAsJsonObject("Payload"));
                 case "deleteMusic" -> responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
+                case "updateRecentlyPlayed" -> responseJson = handleUpdateRecentlyPlayed(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -167,6 +168,30 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleUpdateRecentlyPlayed(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        int musicId = payload.get("musicId").getAsInt();
+
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+
+        try {
+            boolean updated = user.getRecentlyPlayed().addTrack(musicId);
+            if (updated) {
+                userRepository.updateUser(user);
+                response = ResponseUtils.createResponse(Response.updateRecentlyPlayedSuccess.toString(), "Recently played updated successfully");
+            } else {
+                response = ResponseUtils.createResponse(Response.updateRecentlyPlayedFailed.toString(), "Failed to update recently played");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.updateRecentlyPlayedFailed.toString(), "Error updating recently played: " + e.getMessage());
+        }
+        return response;
     }
 
     private JsonObject handleDeleteMusic(JsonObject payload) {
