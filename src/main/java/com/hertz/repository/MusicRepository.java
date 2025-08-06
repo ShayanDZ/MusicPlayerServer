@@ -73,6 +73,9 @@ public class MusicRepository {
         return Response.uploadMusicSuccess;
     }
     public synchronized boolean updateMusic(Music music) {
+        if (!musicList.contains(music)){
+            return false;
+        }
         try {
             DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
             Document updatedMusicDocument = new Document("id", music.getId())

@@ -88,6 +88,9 @@ public class UserRepository {
     }
 
     public synchronized boolean updateUser(User user) {
+        if (!userList.contains(user)){
+            return false;
+        }
         try {
             DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
             Document updatedUserDocument = new Document("username", user.getUsername())
