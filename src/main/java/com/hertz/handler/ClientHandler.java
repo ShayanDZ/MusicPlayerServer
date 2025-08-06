@@ -184,7 +184,7 @@ public class ClientHandler extends Thread {
 
         try {
             String name = playlistMap.get("name").getAsString();
-            int ownerId = playlistMap.get("owner").getAsInt();
+            int ownerId = user.getId();
             String description = playlistMap.get("description").getAsString();
             int id = playlistMap.get("id").getAsInt();
 
