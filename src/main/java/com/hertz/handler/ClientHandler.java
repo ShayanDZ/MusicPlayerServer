@@ -139,19 +139,20 @@ public class ClientHandler extends Thread {
                     }
                     return; // Exit early for downloadMusic
                 }
-                case "getPublicMusicList" ->
-                        responseJson = handleGetPublicMusicList(requestJson.getAsJsonObject("Payload"));
+                case "getPublicMusicList" -> responseJson = handleGetPublicMusicList();
                 case "addMusicToLibrary" ->
                         responseJson = handleAddMusicToLibrary(requestJson.getAsJsonObject("Payload"));
                 case "makeMusicPublic" -> responseJson = handleMakeMusicPublic(requestJson.getAsJsonObject("Payload"));
                 case "getRecentlyPlayedSongs" ->
                         responseJson = handleGetRecentlyPlayedSongs(requestJson.getAsJsonObject("Payload"));
                 case "adminLogin" -> responseJson = handleAdminLogin(requestJson.getAsJsonObject("Payload"));
-                case "getAllUsers" -> responseJson = handleGetAllUsers(requestJson.getAsJsonObject("Payload"));
-                case "getAllMusic" -> responseJson = handleGetAllMusic(requestJson.getAsJsonObject("Payload"));
+                case "getAllUsers" -> responseJson = handleGetAllUsers();
+                case "getAllMusic" -> responseJson = handleGetAllMusic();
                 case "deleteUser" -> responseJson = hangleDeleteUser(requestJson.getAsJsonObject("Payload"));
                 case "deleteMusic" -> responseJson = handleDeleteMusic(requestJson.getAsJsonObject("Payload"));
-                case "updateRecentlyPlayed" -> responseJson = handleUpdateRecentlyPlayed(requestJson.getAsJsonObject("Payload"));
+                case "updateRecentlyPlayed" ->
+                        responseJson = handleUpdateRecentlyPlayed(requestJson.getAsJsonObject("Payload"));
+                case "uploadPlaylist" -> responseJson = handleUploadPlaylist(requestJson.getAsJsonObject("Payload"));
                 default ->
                         responseJson = ResponseUtils.createResponse(Response.InvalidRequest.toString(), "Unknown request type");
 
@@ -168,6 +169,47 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleUploadPlaylist(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        JsonObject playlistMap = payload.getAsJsonObject("playlistMap");
+
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+
+        try {
+            String name = playlistMap.get("name").getAsString();
+            int ownerId = playlistMap.get("owner").getAsInt();
+            String description = playlistMap.get("description").getAsString();
+            int id = playlistMap.get("id").getAsInt();
+
+            // Parse tracks as a list of integers
+            List<Integer> tracks = new ArrayList<>();
+            playlistMap.getAsJsonArray("tracks").forEach(song -> tracks.add(song.getAsJsonObject().get("id").getAsInt()));
+
+            Playlist playlist = new Playlist(name, ownerId, description, id, tracks);
+
+            // Add playlist to user's playlists
+            boolean updatePlaylistSuccess = user.addPlaylist(playlist);
+
+            // Update user in the repository
+            boolean updateSuccess = userRepository.updateUser(user);
+
+            if (updateSuccess && updatePlaylistSuccess) {
+                response = ResponseUtils.createResponse(Response.uploadPlaylistSuccess.toString(), "Playlist uploaded successfully");
+            } else {
+                response = ResponseUtils.createResponse(Response.uploadPlaylistFailed.toString(), "Failed to upload playlist");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.uploadPlaylistFailed.toString(), "Error uploading playlist: " + e.getMessage());
+        }
+
+        return response;
     }
 
     private JsonObject handleUpdateRecentlyPlayed(JsonObject payload) {
@@ -238,7 +280,7 @@ public class ClientHandler extends Thread {
     }
 
 
-    private JsonObject handleGetAllUsers(JsonObject payload) {
+    private JsonObject handleGetAllUsers() {
         try {
             List<User> allUsers = userRepository.getAllUser();
             List<JsonObject> userJsonList = new ArrayList<>();
@@ -287,7 +329,7 @@ public class ClientHandler extends Thread {
         return response;
     }
 
-    private JsonObject handleGetAllMusic(JsonObject payload) {
+    private JsonObject handleGetAllMusic() {
         try {
             List<Music> allMusic = musicRepository.getAllMusic();
             List<JsonObject> musicJsonList = new ArrayList<>();
@@ -393,7 +435,7 @@ public class ClientHandler extends Thread {
         return response;
     }
 
-    private JsonObject handleGetPublicMusicList(JsonObject payload) {
+    private JsonObject handleGetPublicMusicList() {
         try {
             List<Music> publicMusicList = musicRepository.getAllMusic().stream()
                     .filter(Music::isPublic)

@@ -135,4 +135,11 @@ public class User {
     public boolean removeTrack(int trackId) {
         return tracks.remove(Integer.valueOf(trackId));
     }
+    public boolean addPlaylist(Playlist playlist) {
+        if (!playlists.contains(playlist)) {
+            playlists.add(playlist);
+            return true;
+        }
+        return false;
+    }
 }

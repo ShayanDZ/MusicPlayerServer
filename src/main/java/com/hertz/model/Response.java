@@ -66,5 +66,7 @@ public enum Response{
     removeMusicFailed,
     updateRecentlyPlayedSuccess,
     updateRecentlyPlayedFailed,
+    uploadPlaylistSuccess,
+    uploadPlaylistFailed
 }
 

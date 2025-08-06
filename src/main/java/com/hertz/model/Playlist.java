@@ -79,6 +79,24 @@ public class Playlist {
         this.tracks = tracks;
     }
 
+    public Playlist(String name, int ownerId,LocalDateTime localDateTime, String description,int id, List<Integer> tracks) {
+        this.name = name;
+        this.ownerId = ownerId;
+        this.description = description;
+        this.createdDate = localDateTime;
+        this.id = id;
+        this.tracks = tracks;
+    }
+    public Playlist(String name, int ownerId, String description,int id, List<Integer> tracks) {
+        this.name = name;
+        this.ownerId = ownerId;
+        this.description = description;
+        this.createdDate = LocalDateTime.now();
+        this.id = id;
+        this.tracks = tracks;
+    }
+
+
     private static int generateId(String name, int ownerId, LocalDateTime createdDate) {
         return (name + ownerId + createdDate.toString()).hashCode();
     }
