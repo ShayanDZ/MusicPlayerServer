@@ -790,12 +790,14 @@ public class ClientHandler extends Thread {
 
         // Find the user by username
         User user = userRepository.findByUsername(username);
-
+        User temp = null;
         if (user == null) {
             response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
             return response;
         }
-        User temp = userRepository.findByEmail(payload.get("email").getAsString());
+        if (payload.has("email")) {
+            temp = userRepository.findByEmail(payload.get("email").getAsString());
+        }
         if (temp != null && !temp.getUsername().equalsIgnoreCase(username)) {
             response = ResponseUtils.createResponse(Response.emailAlreadyExist.toString(), "Email already exists");
             return response;
