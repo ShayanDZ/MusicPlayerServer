@@ -821,7 +821,6 @@ public class ClientHandler extends Thread {
 
     private JsonObject handleGetUserPlaylists(JsonObject payload) {
         String username = payload.get("username").getAsString();
-
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
@@ -839,7 +838,28 @@ public class ClientHandler extends Thread {
                 playlistJson.addProperty("name", playlist.getName());
                 playlistJson.addProperty("description", playlist.getDescription());
                 playlistJson.addProperty("createdDate", playlist.getCreatedDate().toString());
-                playlistJson.add("tracks", gson.toJsonTree(playlist.getTracks()));
+
+                // Build tracks array with music maps
+                List<JsonObject> musicJsonList = new ArrayList<>();
+                for (Integer trackId : playlist.getTracks()) {
+                    Music music = musicRepository.findMusicById(trackId);
+                    if (music != null) {
+                        JsonObject musicJson = new JsonObject();
+                        musicJson.addProperty("id", music.getId());
+                        musicJson.addProperty("title", music.getTitle());
+                        musicJson.addProperty("artist", music.getArtist().getName());
+                        musicJson.addProperty("genre", music.getGenre());
+                        musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
+                        musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
+                        musicJson.addProperty("extension", music.getExtension());
+                        musicJson.addProperty("likeCount", music.getLikeCount());
+                        boolean isLiked = user.getLikedSongs().contains(music.getId());
+                        musicJson.addProperty("isLiked", isLiked);
+                        musicJson.addProperty("isPublic", music.isPublic());
+                        musicJsonList.add(musicJson);
+                    }
+                }
+                playlistJson.add("tracks", gson.toJsonTree(musicJsonList));
                 playlistJsonList.add(playlistJson);
             }
             response = ResponseUtils.createResponse(Response.getUserPlaylistsSuccess.toString(), "Playlists retrieved successfully");
