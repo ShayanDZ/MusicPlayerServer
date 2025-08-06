@@ -862,6 +862,10 @@ public class ClientHandler extends Thread {
                 playlistJson.add("tracks", gson.toJsonTree(musicJsonList));
                 playlistJsonList.add(playlistJson);
             }
+            if (playlistJsonList.isEmpty()) {
+                response = ResponseUtils.createResponse(Response.noPlaylists.toString(), "No playlists found for the user");
+                return response;
+            }
             response = ResponseUtils.createResponse(Response.getUserPlaylistsSuccess.toString(), "Playlists retrieved successfully");
             response.add("Payload", gson.toJsonTree(playlistJsonList));
         } catch (Exception e) {

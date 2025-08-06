@@ -67,6 +67,7 @@ public enum Response{
     updateRecentlyPlayedSuccess,
     updateRecentlyPlayedFailed,
     uploadPlaylistSuccess,
-    uploadPlaylistFailed
+    uploadPlaylistFailed,
+    noPlaylists,
 }
 
