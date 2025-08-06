@@ -839,7 +839,7 @@ public class ClientHandler extends Thread {
                 playlistJson.addProperty("name", playlist.getName());
                 playlistJson.addProperty("description", playlist.getDescription());
                 playlistJson.addProperty("createdDate", playlist.getCreatedDate().toString());
-                playlistJson.addProperty("ownerId", playlist.getOwnerID());
+                playlistJson.add("tracks", gson.toJsonTree(playlist.getTracks()));
                 playlistJsonList.add(playlistJson);
             }
             response = ResponseUtils.createResponse(Response.getUserPlaylistsSuccess.toString(), "Playlists retrieved successfully");
