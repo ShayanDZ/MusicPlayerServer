@@ -100,6 +100,8 @@ public class ClientHandler extends Thread {
                 case "dislikeSong" -> responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
                 case "getUserPlaylists" ->
                         responseJson = handleGetUserPlaylists(requestJson.getAsJsonObject("Payload"));
+                case "removePlaylist" ->
+                        responseJson = handleRemovePlaylist(requestJson.getAsJsonObject("Payload"));
                 case "getUserLikedSongs" ->
                         responseJson = handleGetUserLikedSongs(requestJson.getAsJsonObject("Payload"));
                 case "verifyResetCode" -> responseJson = handleVerifyResetCode(requestJson.getAsJsonObject("Payload"));
@@ -171,6 +173,31 @@ public class ClientHandler extends Thread {
                 System.out.println("Error closing socket: " + e.getMessage());
             }
         }
+    }
+
+    private JsonObject handleRemovePlaylist(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        int playlistId = payload.get("playlistId").getAsInt();
+
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+
+        try {
+            boolean removed = user.removePlaylist(playlistId);
+            if (removed) {
+                userRepository.updateUser(user);
+                response = ResponseUtils.createResponse(Response.removePlaylistSuccess.toString(), "Playlist removed successfully");
+            } else {
+                response = ResponseUtils.createResponse(Response.playlistNotFound.toString(), "Playlist not found");
+            }
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.removePlaylistFailed.toString(), "Error removing playlist: " + e.getMessage());
+        }
+        return response;
     }
 
     private JsonObject handleDeleteSongFromPlaylist(JsonObject payload) {

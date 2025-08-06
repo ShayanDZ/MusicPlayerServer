@@ -149,6 +149,9 @@ public class User {
     public boolean removePlaylist(Playlist playlist) {
         return playlists.remove(playlist);
     }
+    public boolean removePlaylist(int playlistId) {
+        return playlists.removeIf(playlist -> playlist.getId() == playlistId);
+    }
 
     public boolean addLikedSong(int songId) {
         if (!likedSongs.contains(songId)) {
