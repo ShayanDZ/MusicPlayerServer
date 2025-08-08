@@ -80,7 +80,7 @@ public class ClientHandler extends Thread {
                             out.flush();
                             // Small delay to ensure complete transmission
                             try {
-                                Thread.sleep(100);
+                                Thread.sleep(2000);
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                             }
@@ -713,9 +713,9 @@ public class ClientHandler extends Thread {
             if (responseMessage == Response.uploadMusicSuccess) {
                 response = ResponseUtils.createResponse(Response.uploadMusicSuccess.toString(), "Music uploaded successfully");
             } else if (newSongForUser) {
-                response = ResponseUtils.createResponse(Response.addMusicSuccess.toString(), "Music added to user : " + user.getUsername());
+                response = ResponseUtils.createResponse(Response.uploadMusicSuccess.toString(), "Music added to user library successfully");
             } else {
-                response = ResponseUtils.createResponse(responseMessage.toString(), "Music already exists in the user music List");
+                response = ResponseUtils.createResponse(Response.musicAlreadyExists.toString(), "Music already exists in the user music List");
             }
         } catch (Exception e) {
             response = ResponseUtils.createResponse(Response.uploadMusicFailed.toString(), "Failed to upload music: " + e.getMessage());

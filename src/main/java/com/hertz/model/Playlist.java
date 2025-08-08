@@ -6,6 +6,7 @@ import org.bson.Document;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.ArrayList;
 
 public class Playlist {
 
@@ -170,8 +171,21 @@ public class Playlist {
         String description = document.getString("description");
         LocalDateTime createdDate = document.getDate("createdDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         int ownerId = document.getInteger("ownerId");
-        List<Integer> tracks = (List<Integer>) document.get("tracks");
+        
+        // Safely handle tracks list conversion
+        List<Integer> tracks = new ArrayList<>();
+        Object tracksObj = document.get("tracks");
+        if (tracksObj instanceof List) {
+            List<?> tracksList = (List<?>) tracksObj;
+            for (Object trackObj : tracksList) {
+                if (trackObj instanceof Integer) {
+                    tracks.add((Integer) trackObj);
+                } else if (trackObj instanceof Number) {
+                    tracks.add(((Number) trackObj).intValue());
+                }
+            }
+        }
 
-        return new Playlist(name, ownerId,createdDate, description, tracks);
+        return new Playlist(name, ownerId, createdDate, description, tracks);
     }
 }

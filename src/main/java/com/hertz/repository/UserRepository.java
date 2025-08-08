@@ -52,7 +52,14 @@ public class UserRepository {
                         user.getRecentlyPlayed().getTracks().addAll(recentlyPlayed.getTracks());
                     }
                     if (playlists != null) {
-                        user.getPlaylists().addAll(playlists);
+                        // Convert Document objects to Playlist objects
+                        for (Object playlistObj : playlists) {
+                            if (playlistObj instanceof Document) {
+                                Document playlistDocument = (Document) playlistObj;
+                                Playlist playlist = Playlist.fromDocument(playlistDocument);
+                                user.getPlaylists().add(playlist);
+                            }
+                        }
                     }
                     userList.add(user);
                 });
