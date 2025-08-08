@@ -464,13 +464,23 @@ public class ClientHandler extends Thread {
             return response;
         }
         try {
-            List<Integer> recentlyPlayedSongs = user.getRecentlyPlayed().getTracks();
-            if (recentlyPlayedSongs.isEmpty()) {
+            List<Integer> recentlyPlayedSongIds = user.getRecentlyPlayed().getTracks();
+            if (recentlyPlayedSongIds.isEmpty()) {
                 response = ResponseUtils.createResponse(Response.noRecentlyPlayedSongs.toString(), "No recently played songs found for the user");
                 return response;
             }
+            
+            // Convert song IDs to full music objects
+            List<JsonObject> musicJsonList = new ArrayList<>();
+            for (Integer songId : recentlyPlayedSongIds) {
+                Music music = musicRepository.findMusicById(songId);
+                if (music != null) {
+                    musicToJsonObject(user, musicJsonList, music);
+                }
+            }
+            
             response = ResponseUtils.createResponse(Response.getRecentlyPlayedSongsSuccess.toString(), "Recently played songs retrieved successfully");
-            response.add("Payload", gson.toJsonTree(recentlyPlayedSongs));
+            response.add("Payload", gson.toJsonTree(musicJsonList));
         } catch (Exception e) {
             response = ResponseUtils.createResponse(Response.getRecentlyPlayedSongsFailed.toString(), "Failed to retrieve recently played songs: " + e.getMessage());
         }
