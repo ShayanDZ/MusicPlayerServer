@@ -962,6 +962,15 @@ public class ClientHandler extends Thread {
         musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
         musicJson.addProperty("extension", music.getExtension());
         musicJson.addProperty("likeCount", music.getLikeCount());
+
+        // Include album info so clients can show album title
+        JsonObject albumJson = new JsonObject();
+        albumJson.addProperty("title", music.getAlbum().getTitle());
+        JsonObject albumArtistJson = new JsonObject();
+        albumArtistJson.addProperty("name", music.getAlbum().getArtist().getName());
+        albumJson.add("artist", albumArtistJson);
+        musicJson.add("album", albumJson);
+
         boolean isLiked = user.getLikedSongs().contains(music.getId());
         musicJson.addProperty("isLiked", isLiked);
         musicJson.addProperty("isPublic", music.isPublic());

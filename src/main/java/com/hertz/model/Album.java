@@ -23,6 +23,14 @@ public class Album {
         return (title + artist.getName() + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public Artist getArtist() {
+        return artist;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -59,5 +67,6 @@ public class Album {
         Artist artist = Artist.fromDocument(artistDocument);
         return new Album(title, artist, id);
     }
+
 }
 
