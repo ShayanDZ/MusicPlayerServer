@@ -18,6 +18,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,17 +69,13 @@ public class ClientHandler extends Thread {
                 case "removeMusic" -> responseJson = handleRemoveMusic(requestJson.getAsJsonObject("Payload"));
                 case "downloadMusic" -> {
                     responseJson = handleDownloadMusic(requestJson.getAsJsonObject("Payload"));
-                    // For downloadMusic, send response and close connection to signal completion
                     if (responseJson.has("status") &&
                             responseJson.get("status").getAsString().equals(Response.downloadMusicSuccess.toString())) {
                         String responseString = responseJson.toString();
                         System.out.println("Sending download response: " + responseString.length() + " characters");
-
-                        // Send the response using PrintWriter to ensure proper JSON transmission
                         try {
                             out.print(responseString);
                             out.flush();
-                            // Small delay to ensure complete transmission
                             try {
                                 Thread.sleep(2000);
                             } catch (InterruptedException e) {
@@ -87,14 +84,13 @@ public class ClientHandler extends Thread {
                         } catch (Exception e) {
                             System.out.println("Error sending response: " + e.getMessage());
                         }
-                        // Close the connection to signal completion
                         socket.close();
-                        return; // Exit early
+                        return;
                     } else {
                         System.out.println("Sending download error response");
                         out.println(responseJson.toString());
                     }
-                    return; // Exit early for downloadMusic
+                    return;
                 }
                 case "likeSong" -> responseJson = handleLikeSong(requestJson.getAsJsonObject("Payload"));
                 case "dislikeSong" -> responseJson = handleDislikeSong(requestJson.getAsJsonObject("Payload"));
@@ -113,33 +109,28 @@ public class ClientHandler extends Thread {
                         responseJson = handleUploadProfileImage(requestJson.getAsJsonObject("Payload"));
                 case "getProfileImage" -> {
                     responseJson = handleGetProfileImage(requestJson.getAsJsonObject("Payload"));
-                    // For downloadMusic, send response and close connection to signal completion
                     if (responseJson.has("status") &&
                             responseJson.get("status").getAsString().equals(Response.getProfileImageSuccess.toString())) {
                         String responseString = responseJson.toString();
                         System.out.println("Sending download response: " + responseString.length() + " characters");
-
-                        // Send the response using PrintWriter to ensure proper JSON transmission
                         try {
                             out.print(responseString);
                             out.flush();
-                            // Small delay to ensure complete transmission
                             try {
-                                Thread.sleep(100);
+                                Thread.sleep(1000);
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                             }
                         } catch (Exception e) {
                             System.out.println("Error sending response: " + e.getMessage());
                         }
-                        // Close the connection to signal completion
                         socket.close();
-                        return; // Exit early
+                        return;
                     } else {
                         System.out.println("Sending download error response");
                         out.println(responseJson.toString());
                     }
-                    return; // Exit early for downloadMusic
+                    return;
                 }
                 case "getPublicMusicList" -> responseJson = handleGetPublicMusicList();
                 case "addMusicToLibrary" ->
@@ -442,7 +433,7 @@ public class ClientHandler extends Thread {
                 }
                 musicJson.addProperty("genre", music.getGenre());
                 musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
-                musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
+                musicJson.addProperty("releaseDate", music.getReleaseDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
                 musicJson.addProperty("isPublic", music.isPublic());
                 musicJsonList.add(musicJson);
             }
@@ -553,7 +544,7 @@ public class ClientHandler extends Thread {
                 musicJson.addProperty("artist", music.getArtist().getName());
                 musicJson.addProperty("genre", music.getGenre());
                 musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
-                musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
+                musicJson.addProperty("releaseDate", music.getReleaseDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
                 musicJson.addProperty("extension", music.getExtension());
                 musicJson.addProperty("likeCount", music.getLikeCount());
                 musicJson.addProperty("isPublic", music.isPublic());
@@ -857,7 +848,7 @@ public class ClientHandler extends Thread {
                 // Update the music's likeCount in the database
                 musicRepository.updateMusic(music);
 
-                userRepository.updateUser(user); // Ensure user is updated in the repository
+                userRepository.updateUser(user);
                 response = ResponseUtils.createResponse(Response.likeSuccess.toString(), "Song liked successfully");
             }
         } catch (Exception e) {
@@ -959,7 +950,7 @@ public class ClientHandler extends Thread {
         musicJson.addProperty("artist", music.getArtist().getName());
         musicJson.addProperty("genre", music.getGenre());
         musicJson.addProperty("durationInSeconds", music.getDurationInSeconds());
-        musicJson.addProperty("releaseDate", music.getReleaseDate().toString());
+        musicJson.addProperty("releaseDate", music.getReleaseDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         musicJson.addProperty("extension", music.getExtension());
         musicJson.addProperty("likeCount", music.getLikeCount());
 
