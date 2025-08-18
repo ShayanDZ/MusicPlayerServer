@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ResetCodeRepository {
-    private static ResetCodeRepository instance;
+    private static volatile ResetCodeRepository instance;
     private final Map<String, ResetCode> codeStore = new HashMap<>();
     private ResetCodeRepository() {
     }

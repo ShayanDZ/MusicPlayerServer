@@ -1,0 +1,142 @@
+# Hertz Music Server Configuration
+# Copy this file to server.properties and modify as needed
+
+# =============================================================================
+# SERVER CONFIGURATION
+# =============================================================================
+
+# Server port (default: 12345)
+server.port=12345
+
+# Maximum number of concurrent connections (default: 100)
+server.max.connections=100
+
+# Thread pool size for handling client connections (default: 20)
+server.thread.pool.size=20
+
+# Connection timeout in milliseconds (default: 30000)
+server.connection.timeout=30000
+
+# Request timeout in milliseconds (default: 60000)
+server.request.timeout=60000
+
+# Maximum file size for uploads in bytes (default: 100MB)
+server.max.file.size=104857600
+
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+
+# MongoDB connection URI (default: mongodb://localhost:27017)
+mongodb.uri=mongodb://localhost:27017
+
+# MongoDB database name (default: MusicApp)
+mongodb.database=MusicApp
+
+# MongoDB connection pool size (default: 10)
+mongodb.connection.pool.size=10
+
+# =============================================================================
+# EMAIL CONFIGURATION
+# =============================================================================
+
+# SMTP server host (default: smtp.gmail.com)
+email.host=smtp.gmail.com
+
+# SMTP server port (default: 587)
+email.port=587
+
+# Enable/disable email functionality (default: false)
+email.enabled=false
+
+# Note: Email username and password are set via environment variables:
+# EMAIL_USERNAME=your-email@gmail.com
+# EMAIL_PASSWORD=your-app-password
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+
+# Bcrypt rounds for password hashing (default: 12)
+security.bcrypt.rounds=12
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+
+# Logging level (default: INFO)
+# Options: SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST
+logging.level=INFO
+
+# =============================================================================
+# PERFORMANCE TUNING
+# =============================================================================
+
+# Enable connection pooling (default: true)
+# This is always enabled in the new architecture
+
+# Enable request validation (default: true)
+# This is always enabled in the new architecture
+
+# Enable response caching (default: false)
+# Future enhancement
+
+# =============================================================================
+# MONITORING CONFIGURATION
+# =============================================================================
+
+# Enable health checks (default: true)
+# This is always enabled in the new architecture
+
+# Enable statistics logging (default: true)
+# This is always enabled in the new architecture
+
+# =============================================================================
+# DEVELOPMENT CONFIGURATION
+# =============================================================================
+
+# Enable debug mode (default: false)
+# This affects logging verbosity and error details
+
+# Enable development features (default: false)
+# This enables additional debugging and testing features
+
+# =============================================================================
+# PRODUCTION RECOMMENDATIONS
+# =============================================================================
+
+# For production deployment, consider these settings:
+
+# server.port=8080
+# server.max.connections=500
+# server.thread.pool.size=50
+# server.connection.timeout=60000
+# server.request.timeout=120000
+# server.max.file.size=524288000
+# mongodb.connection.pool.size=20
+# logging.level=WARNING
+# email.enabled=true
+
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+
+# The following environment variables can be used instead of properties:
+
+# EMAIL_USERNAME - Email username for SMTP authentication
+# EMAIL_PASSWORD - Email password for SMTP authentication
+# MONGODB_URI - MongoDB connection URI
+# MONGODB_DATABASE - MongoDB database name
+# SERVER_PORT - Server port number
+# LOG_LEVEL - Logging level
+
+# =============================================================================
+# NOTES
+# =============================================================================
+
+# 1. All numeric values should be positive integers
+# 2. File sizes are specified in bytes
+# 3. Timeouts are specified in milliseconds
+# 4. Environment variables take precedence over properties file values
+# 5. Default values are used if neither properties nor environment variables are set
+# 6. The server will log configuration values at startup for verification

@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MusicRepository {
-    private static MusicRepository instance;
+    private static volatile MusicRepository instance;
     private List<Music> musicList = new ArrayList<>();
 
 

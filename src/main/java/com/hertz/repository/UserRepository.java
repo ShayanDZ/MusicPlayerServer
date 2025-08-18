@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepository {
-    private static UserRepository instance;
+    private static volatile UserRepository instance;
     private List<User> userList = new ArrayList<>();
 
     private UserRepository() {

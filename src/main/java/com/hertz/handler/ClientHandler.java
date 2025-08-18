@@ -136,6 +136,7 @@ public class ClientHandler extends Thread {
                 case "addMusicToLibrary" ->
                         responseJson = handleAddMusicToLibrary(requestJson.getAsJsonObject("Payload"));
                 case "makeMusicPublic" -> responseJson = handleMakeMusicPublic(requestJson.getAsJsonObject("Payload"));
+                case "makeMusicPrivate" -> responseJson = handleMakeMusicPrivate(requestJson.getAsJsonObject("Payload"));
                 case "getRecentlyPlayedSongs" ->
                         responseJson = handleGetRecentlyPlayedSongs(requestJson.getAsJsonObject("Payload"));
                 case "adminLogin" -> responseJson = handleAdminLogin(requestJson.getAsJsonObject("Payload"));
@@ -499,6 +500,30 @@ public class ClientHandler extends Thread {
             response = ResponseUtils.createResponse(Response.makeMusicPublicSuccess.toString(), "Music made public successfully");
         } catch (Exception e) {
             response = ResponseUtils.createResponse(Response.makeMusicPublicFailed.toString(), "Failed to make music public: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private JsonObject handleMakeMusicPrivate(JsonObject payload) {
+        String username = payload.get("username").getAsString();
+        int musicId = payload.get("musicId").getAsInt();
+
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+            return response;
+        }
+        Music music = musicRepository.findMusicById(musicId);
+        if (music == null) {
+            response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
+            return response;
+        }
+        try {
+            music.setPublic(false);
+            musicRepository.updateMusic(music);
+            response = ResponseUtils.createResponse(Response.makeMusicPrivateSuccess.toString(), "Music made private successfully");
+        } catch (Exception e) {
+            response = ResponseUtils.createResponse(Response.makeMusicPrivateFailed.toString(), "Failed to make music private: " + e.getMessage());
         }
         return response;
     }
