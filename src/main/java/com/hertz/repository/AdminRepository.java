@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 public class AdminRepository {
-    private static AdminRepository instance;
+    private static volatile AdminRepository instance;
     private final List<Admin> adminList = new ArrayList<>();
 
     private AdminRepository() {
