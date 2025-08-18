@@ -51,6 +51,8 @@ public enum Response{
     getPublicMusicListFailed,
     makeMusicPublicSuccess,
     makeMusicPublicFailed,
+    makeMusicPrivateSuccess,
+    makeMusicPrivateFailed,
     noRecentlyPlayedSongs,
     getRecentlyPlayedSongsSuccess,
     getRecentlyPlayedSongsFailed,
