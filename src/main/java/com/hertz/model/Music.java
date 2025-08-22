@@ -141,7 +141,7 @@ public class Music {
         musicDocument.append("extension", this.extension);
         musicDocument.append("base64", this.base64);
         musicDocument.append("likeCount", this.likeCount);
-        musicDocument.append("isLiked", this.isPublic);
+        musicDocument.append("isPublic", this.isPublic);
         return musicDocument;
     }
 
@@ -162,12 +162,12 @@ public class Music {
         Album album = Album.fromDocument(albumDocument);
         String extension = document.getString("extension");
         String base64 = document.getString("base64");
-        int likeCount = document.getInteger("likeCount");
-        boolean isLiked = document.getBoolean("isLiked");
+        int likeCount = document.getInteger("likeCount", 0);
+        boolean isPublic = document.getBoolean("isPublic", false);
 
         Music music = new Music(title, artist, genre, durationInSeconds, releaseDate,addedDate, album, id, extension, base64);
         music.setLikeCount(likeCount);
-        music.isPublic = isLiked;
+        music.setPublic(isPublic);
         return music;
     }
 }

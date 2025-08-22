@@ -36,8 +36,10 @@ public class MusicRepository {
                     String extension = musicDocument.getString("extension");
                     String base64 = musicDocument.getString("base64");
                     boolean isPublic = musicDocument.getBoolean("isPublic", false); // Default to false if not present
+                    int likeCount = musicDocument.getInteger("likeCount", 0); // Default to 0 if not present
                     Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension,base64);
                     music.setPublic(isPublic);
+                    music.setLikeCount(likeCount);
                     musicList.add(music);
                 });
 

@@ -484,11 +484,28 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
-            return response;
+        // Allow admins with permission OR regular users (restricted to their own library)
+        Admin admin = adminRepository.findByUsername(username);
+        if (admin != null) {
+            // Admin found, check if they have the capability to change songs
+            if (!admin.hasCapability(Capability.CHANGE_SONGS)) {
+                response = ResponseUtils.createResponse(Response.makeMusicPublicFailed.toString(), "Admin does not have permission to change songs");
+                return response;
+            }
+        } else {
+            // Regular user path
+            User user = userRepository.findByUsername(username);
+            if (user == null) {
+                response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+                return response;
+            }
+            // Ensure the user owns the track before allowing them to make it public
+            if (!user.hasTrack(musicId)) {
+                response = ResponseUtils.createResponse(Response.makeMusicPublicFailed.toString(), "Users can only make their own music public");
+                return response;
+            }
         }
+
         Music music = musicRepository.findMusicById(musicId);
         if (music == null) {
             response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
@@ -508,11 +525,26 @@ public class ClientHandler extends Thread {
         String username = payload.get("username").getAsString();
         int musicId = payload.get("musicId").getAsInt();
 
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+        // Check if username belongs to an admin first
+        Admin admin = adminRepository.findByUsername(username);
+        if (admin != null) {
+            // Admin found, check if they have the capability to change songs
+            if (!admin.hasCapability(Capability.CHANGE_SONGS)) {
+                response = ResponseUtils.createResponse(Response.makeMusicPrivateFailed.toString(), "Admin does not have permission to change songs");
+                return response;
+            }
+        } else {
+            // If not an admin, check if it's a regular user
+            User user = userRepository.findByUsername(username);
+            if (user == null) {
+                response = ResponseUtils.createResponse(Response.userNotFound.toString(), "User not found");
+                return response;
+            }
+            // Regular users cannot change music publicity status
+            response = ResponseUtils.createResponse(Response.makeMusicPrivateFailed.toString(), "Regular users cannot change music publicity status");
             return response;
         }
+        
         Music music = musicRepository.findMusicById(musicId);
         if (music == null) {
             response = ResponseUtils.createResponse(Response.musicNotFound.toString(), "Music not found");
@@ -573,6 +605,13 @@ public class ClientHandler extends Thread {
                 musicJson.addProperty("extension", music.getExtension());
                 musicJson.addProperty("likeCount", music.getLikeCount());
                 musicJson.addProperty("isPublic", music.isPublic());
+                
+                JsonObject albumJson = new JsonObject();
+                albumJson.addProperty("title", music.getAlbum().getTitle());
+                JsonObject albumArtistJson = new JsonObject();
+                albumArtistJson.addProperty("name", music.getAlbum().getArtist().getName());
+                albumJson.add("artist", albumArtistJson);
+                musicJson.add("album", albumJson);
                 musicJsonList.add(musicJson);
             }
             response = ResponseUtils.createResponse(Response.getPublicMusicListSuccess.toString(), "Public Music list retrieved successfully");
