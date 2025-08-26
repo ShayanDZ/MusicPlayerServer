@@ -20,7 +20,7 @@ public class Album {
     }
 
     private int generateId(String title, Artist artist) {
-        return (title + artist.getName() + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
+        return (title + artist.getName() + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode();
     }
 
     public String getTitle() {

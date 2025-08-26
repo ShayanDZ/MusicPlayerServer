@@ -31,7 +31,7 @@ public class Artist {
     }
 
     private int generateId(String name) {
-        return (name + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode(); // Simple ID generation logic
+        return (name + System.currentTimeMillis() + (int) (Math.random() * 1000)).hashCode();
     }
 
     @Override

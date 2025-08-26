@@ -35,8 +35,8 @@ public class MusicRepository {
                     int id = musicDocument.getInteger("id");
                     String extension = musicDocument.getString("extension");
                     String base64 = musicDocument.getString("base64");
-                    boolean isPublic = musicDocument.getBoolean("isPublic", false); // Default to false if not present
-                    int likeCount = musicDocument.getInteger("likeCount", 0); // Default to 0 if not present
+                    boolean isPublic = musicDocument.getBoolean("isPublic", false);
+                    int likeCount = musicDocument.getInteger("likeCount", 0);
                     Music music = new Music(title, artist, genre, durationInSeconds, releaseDate, album, id, extension,base64);
                     music.setPublic(isPublic);
                     music.setLikeCount(likeCount);
@@ -107,18 +107,18 @@ public class MusicRepository {
                 return music;
             }
         }
-        return null; // Return null if no music with the given ID is found
+        return null;
     }
 
     public boolean deleteMusic(Music music) {
         if (!musicList.contains(music)) {
-            return false; // Music not found
+            return false;
         }
         musicList.remove(music);
         DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
         databaseConnection.getDatabase().getCollection("musics")
                 .deleteOne(new Document("id", music.getId()));
-        return true; // Music successfully deleted
+        return true;
     }
 
     public Music getMusicById(Integer trackId) {
@@ -127,6 +127,6 @@ public class MusicRepository {
                 return music;
             }
         }
-        return null; // Return null if no music with the given ID is found
+        return null;
     }
 }
