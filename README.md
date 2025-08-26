@@ -13,6 +13,13 @@
 
 ---
 
+## 🔗 Repositories
+
+- **Frontend (Flutter app)**: [github.com/ArshaFrn/MusicPlayer](https://github.com/ArshaFrn/MusicPlayer)
+- **Backend (this repo)**: [github.com/ShayanDZ/MusicPlayerServer](https://github.com/ShayanDZ/MusicPlayerServer)
+
+---
+
 ## 🚀 Overview
 
 The Hertz Music Server is a high-performance TCP server built in Java that powers the Hertz music streaming application. It provides real-time communication, secure user authentication, music file management, and comprehensive data persistence using MongoDB.
@@ -132,8 +139,8 @@ Server/
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd Server
+   git clone https://github.com/ShayanDZ/MusicPlayerServer.git
+   cd MusicPlayerServer
    ```
 
 2. **Configure MongoDB**
@@ -470,22 +477,6 @@ kill -9 <PID>
 ### Logging
 
 Enable debug logging by modifying log levels in the application configuration.
-
----
-
-## 🤝 Contributing
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/AmazingFeature`)
-3. **Commit your changes** (`git commit -m 'Add some AmazingFeature'`)
-4. **Push to the branch** (`git push origin feature/AmazingFeature`)
-5. **Open a Pull Request**
-
-### Code Style
-- Follow **Java conventions**
-- Use **meaningful variable names**
-- Add **proper documentation**
-- Include **unit tests**
 
 ---
 
