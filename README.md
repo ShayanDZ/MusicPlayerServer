@@ -464,6 +464,7 @@ mongo mongodb://localhost:27017
 - Verify SMTP credentials
 - Check firewall settings
 - Enable "Less secure app access" for Gmail
+- Use a safe VPN if not availbe in your country :)
 
 **3. Port Already in Use**
 ```bash
@@ -473,12 +474,6 @@ netstat -tulpn | grep 12345
 # Kill process
 kill -9 <PID>
 ```
-
-### Logging
-
-Enable debug logging by modifying log levels in the application configuration.
-
----
 
 ## 📄 License
 
